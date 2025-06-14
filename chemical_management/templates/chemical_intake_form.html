@@ -11,6 +11,9 @@
     <h2>Content Panel</h2>
     <ul>
       <li>
+        <a href="#">Entry Page</a>
+      </li>
+      <li>
         <a href="#">Report Page</a>
       </li>
       <li>
@@ -20,11 +23,12 @@
         <a href="#">Logout</a>
       </li>
     </ul>
+    <p id="border"></p>
     <img src="{% static 'base/images/iocl_no_subtext.png' %}" alt="IOCL_ICON">
     <p>
-      Indian Oil
+      Indian Oil Corporation
       <br>
-      Corporation Limited
+      Limited
       <br>
       (Paradip Refinery)
     </p>
@@ -32,7 +36,60 @@
   <div class="form">
     <p>Daily Chemical Management & Data Entry Panel</p>
     <form method="post">
-      <input />
+      <ul>
+        <li>
+          <label for="date">Select Date:</label>
+          <input type="date" id="date" name="date" min="" max="">
+        </li>
+        <li>
+          <label for="unit">Select Unit:</label>
+          <select name="unit">
+            <option value="" disabled selected>Select Unit</option>
+          </select>
+        </li>
+        <li>
+          <label for="chemical">Select Chemical:</label>
+          <select name="chemical">
+            <option value="" disabled selected>Select Chemical</option>
+          </select>
+        </li>
+        <li>
+          <label for="uom">Unit Of Measurement(UOM):</label>
+          <input name="uom" value="uom">
+          <label for="smc">Sap Material Code:</label>
+          <input name="smc" value="smc">
+        </li>
+        <li>
+          <label for="opening_balance">Opening Balance:</label>
+          <input name="opening_balance" value="opening_balance">
+        </li>
+        <li>
+          <label for="receive_qty">Enter Receive Qty:</label>
+          <input name="receive_qty" value="receive_qty">
+        </li>
+        <li>
+          <label for="consumption_qty">Enter Consumption Qty:</label>
+          <input name="consumption_qty" value="consumption_qty">
+        </li>
+        <li>
+          <label for="closing_balance">Closing Balance:</label>
+          <input name="closing_balance" value="closing_balance">
+          <button type="button">Details</button>
+        </li>
+        <li>
+          <label for="sap_balance">SAP Balance:</label>
+          <input name="sap_balance" value="sap_balance">
+        </li>
+        <li>
+          <label for="remarks">Remarks:</label>
+          <input name="remarks" value="remarks">
+        </li>
+        <li>
+          <input type="submit" value="Submit">
+          <button type="button">Clear</button>
+        </li>
+      </ul>
     </form>
   </div>
+  <p id="welcome">Welcome, User</p>
 {% endblock %}
