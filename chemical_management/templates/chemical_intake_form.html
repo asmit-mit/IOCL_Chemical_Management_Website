@@ -1,0 +1,38 @@
+{% extends "base/base.html" %}
+{% block css_link %}
+  {% load static %}
+  <link type="text/css"
+        href="{% static 'chemical_intake_form/style.css' %}"
+        rel="stylesheet" />
+{% endblock %}
+{% block title %}Chemical Intake Form{% endblock %}
+{% block main %}
+  <div class="sidebar">
+    <h2>Content Panel</h2>
+    <ul>
+      <li>
+        <a href="#">Report Page</a>
+      </li>
+      <li>
+        <a href="#">Settings</a>
+      </li>
+      <li>
+        <a href="#">Logout</a>
+      </li>
+    </ul>
+    <img src="{% static 'base/images/iocl_no_subtext.png' %}" alt="IOCL_ICON">
+    <p>
+      Indian Oil
+      <br>
+      Corporation Limited
+      <br>
+      (Paradip Refinery)
+    </p>
+  </div>
+  <div class="form">
+    <p>Daily Chemical Management & Data Entry Panel</p>
+    <form method="post">
+      <input />
+    </form>
+  </div>
+{% endblock %}
