@@ -23,7 +23,39 @@
         </ul>
       </div>
       <div class="main">
-        {% block main %}<h1>Default Content</h1>{% endblock %}
+        {% if messages %}
+          <dialog id="message_modal">
+            <ul class="messages">
+              {% for message in messages %}
+                <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+              {% endfor %}
+            </ul>
+            <button id="close_modal">Close</button>
+          </dialog>
+          <script>
+            document.addEventListener("DOMContentLoaded", function () {
+              const messageModal = document.getElementById("message_modal");
+              const closeModalButton = document.getElementById("close_modal");
+
+              if (messageModal) {
+                messageModal.showModal();
+
+                closeModalButton.addEventListener("click", function () {
+                  messageModal.close();
+                });
+
+                messageModal.addEventListener("click", function (event) {
+                  if (event.target === messageModal) {
+                    messageModal.close();
+                  }
+                });
+              }
+            });
+          </script>
+        {% endif %}
+        {% block main %}
+          <h1>Default Content</h1>
+        {% endblock %}
       </div>
       <div class="footer">
         <p>"Thanks For Visiting Our Daily Chemical Consumption Entry Page Developed By IS Department"</p>

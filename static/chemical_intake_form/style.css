@@ -82,12 +82,12 @@ input[type="number"] {
   position: relative;
   left: 50%;
   transform: translateX(-50%);
-  height: 100%;
   width: 58%;
   border: 1px solid black;
   border-radius: 8px;
   background-color: white;
   box-shadow: 5px 0 30px black;
+  padding-bottom: 10px;
 }
 
 .form p {

@@ -116,3 +116,37 @@ body {
   padding-left: 10px;
   margin-top: 5px;
 }
+
+#message_modal {
+  position: relative;
+  background-color: palegoldenrod;
+  border-radius: 20px;
+  border: 1px solid black;
+  font-style: italic;
+  font-weight: bold;
+  box-shadow: 3px 5px 0 black;
+}
+
+.messages {
+  padding: 0;
+  list-style: none;
+}
+
+#close_modal {
+  position: relative;
+  transform: translateX(-50%);
+  left: 50%;
+  background-color: dodgerblue;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  padding: 2px 10px 2px 10px;
+}
+
+#close_modal:hover {
+  background-color: blue;
+}
+
+#close_modal:active {
+  background-color: midnightblue;
+}

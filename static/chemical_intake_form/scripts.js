@@ -18,19 +18,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 document.addEventListener("DOMContentLoaded", function () {
-  const clearButton = document.getElementById("clear");
-  const form = document.getElementById("entryform");
-  const disabledInputs = document.querySelectorAll("input[disabled]");
-
-  clearButton.addEventListener("click", function () {
-    form.reset();
-    disabledInputs.forEach((input) => {
-      input.value = "";
-    });
-  });
-});
-
-document.addEventListener("DOMContentLoaded", function () {
   const today = new Date();
   const year = today.getFullYear();
   const month = String(today.getMonth() + 1).padStart(2, "0");
