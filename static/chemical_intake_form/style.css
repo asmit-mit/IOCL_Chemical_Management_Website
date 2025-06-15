@@ -1,3 +1,13 @@
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
 .main {
   position: relative;
   width: 99%;
@@ -69,23 +79,145 @@
 }
 
 .form {
-  position: absolute;
-  left: 270px;
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
   height: 100%;
   width: 58%;
-  border: 1px solid midnightblue;
+  border: 1px solid black;
   border-radius: 8px;
   background-color: white;
-  padding-left: 16px;
-  padding-right: 16px;
+  box-shadow: 5px 0 30px black;
 }
 
 .form p {
+  font-size: 20px;
   color: white;
   padding: 4px 0px 4px 16px;
+  margin: 6px 6px 0 6px;
   background-color: blue;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
+  box-shadow: 0 5px 10px black;
+}
+
+.form form ul {
+  margin: 0;
+  padding: 30px 8px 0 8px;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.form form ul li {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.form form ul li ul li {
+  flex: 1;
+}
+
+.form form ul li label {
+  font-size: 12px;
+  font-weight: bold;
+  color: indigo;
+}
+
+.form form ul li input,
+.form form ul li button {
+  height: 30px;
+}
+
+.form form ul li select {
+  background-color: white;
+  height: 35px;
+}
+
+.form form ul li input,
+.form form ul li select,
+.form form ul li textarea,
+#closing_balance li input {
+  border-left: 5px solid red;
+  border-radius: 5px;
+  padding-left: 5px;
+  font-weight: bold;
+}
+
+#uomsmc,
+#closing_balance {
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+#closing_balance li:last-child {
+  flex: 0;
+  padding-top: 20px;
+}
+
+#closing_balance li button,
+#close_details {
+  color: white;
+  background-color: dodgerblue;
+  padding: 0 10px 0 10px;
+  border: 0;
+  border-radius: 5px;
+}
+
+#closing_balance li button:hover,
+#close_details:hover {
+  background-color: steelblue;
+  cursor: pointer;
+}
+
+#closing_balance li button:active,
+#close_details:active {
+  color: white;
+  background-color: darkblue;
+  padding: 0 10px 0 10px;
+  border: 0;
+}
+
+#remarks {
+  height: 80px;
+  resize: none;
+}
+
+#submit_area {
+  display: flex;
+  flex-direction: row;
+  margin: 20px auto 10px auto;
+}
+
+#clear,
+#submit {
+  border: none;
+  color: white;
+  padding: 2px 12px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+}
+
+#submit {
+  background-color: blue;
+  box-shadow: 0 4px 0 midnightblue;
+}
+
+#clear {
+  background-color: #494949;
+  box-shadow: 0 4px 0 black;
+  border-radius: 5px;
+}
+
+#clear:active,
+#submit:active {
+  top: 4px;
+  box-shadow: 0 0 0;
 }
 
 #welcome {
@@ -95,7 +227,6 @@
   height: 20px;
   width: 150px;
   text-align: center;
-  font-weight: bold;
   color: midnightblue;
   background-color: mediumspringgreen;
   border: 2px solid midnightblue;
@@ -103,4 +234,59 @@
   padding-top: 5px;
   padding-bottom: 3px;
   margin: 0;
+}
+
+#details_dialog {
+  position: fixed;
+  top: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+  box-shadow: 3px 3px 0 black;
+  border: 1px solid black;
+  border-radius: 20px;
+  height: 240px;
+  width: 400px;
+  padding: 0;
+  margin: 0;
+}
+
+#details_dialog h2 {
+  text-align: center;
+  margin: 5px 0 5px 0;
+  padding: 0;
+  font-size: 23px;
+  width: 100%;
+}
+
+#details_dialog ul {
+  padding: 0 0 0 20px;
+  list-style: none;
+}
+
+#details_dialog ul p {
+  border-top: 2px dashed black;
+  width: 200px;
+}
+
+#details_dialog ul li {
+  display: flex;
+  margin-bottom: 5px;
+}
+
+#details_dialog ul li input {
+  border: none;
+}
+
+#close_details {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-top: 10px;
+  height: 30px;
+  width: 80px;
+}
+
+.separator {
+  margin: 0 5px 0 5px;
+  border-top: 2px solid black;
 }

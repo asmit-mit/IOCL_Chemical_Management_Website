@@ -33,63 +33,124 @@
       (Paradip Refinery)
     </p>
   </div>
-  <div class="form">
+  <div class="form" id="entryform">
     <p>Daily Chemical Management & Data Entry Panel</p>
     <form method="post">
+      {% csrf_token %}
       <ul>
         <li>
           <label for="date">Select Date:</label>
           <input type="date" id="date" name="date" min="" max="">
         </li>
         <li>
-          <label for="unit">Select Unit:</label>
-          <select name="unit">
-            <option value="" disabled selected>Select Unit</option>
-          </select>
-        </li>
-        <li>
           <label for="chemical">Select Chemical:</label>
           <select name="chemical">
-            <option value="" disabled selected>Select Chemical</option>
+            <option disabled value="">Select Chemical</option>
           </select>
         </li>
         <li>
-          <label for="uom">Unit Of Measurement(UOM):</label>
-          <input name="uom" value="uom">
-          <label for="smc">Sap Material Code:</label>
-          <input name="smc" value="smc">
+          <label for="unit">Select Unit:</label>
+          <select name="unit">
+            <option disabled value="">Select Unit</option>
+          </select>
+        </li>
+        <li>
+          <ul id="uomsmc">
+            <li>
+              <label for="uom">Unit Of Measurement(UOM):</label>
+              <input name="uom" id="uom">
+            </li>
+            <li>
+              <label for="smc">Sap Material Code:</label>
+              <input name="smc" id="smc">
+            </li>
+          </ul>
         </li>
         <li>
           <label for="opening_balance">Opening Balance:</label>
-          <input name="opening_balance" value="opening_balance">
+          <input type="number"
+                 name="opening_balance"
+                 id="opening_balance"
+                 placeholder="Input opening balance...">
         </li>
         <li>
           <label for="receive_qty">Enter Receive Qty:</label>
-          <input name="receive_qty" value="receive_qty">
+          <input type="number"
+                 name="receive_qty"
+                 id="receive_qty"
+                 placeholder="Input receive quantity...">
         </li>
         <li>
           <label for="consumption_qty">Enter Consumption Qty:</label>
-          <input name="consumption_qty" value="consumption_qty">
+          <input type="number"
+                 name="consumption_qty"
+                 id="consumption_qty"
+                 placeholder="Input consumption quantity...">
         </li>
         <li>
-          <label for="closing_balance">Closing Balance:</label>
-          <input name="closing_balance" value="closing_balance">
-          <button type="button">Details</button>
+          <ul id="closing_balance">
+            <li>
+              <label for="closing_balance">Closing Balance:</label>
+              <input type="number"
+                     disabled
+                     name="closing_balance"
+                     id="closing_balance_input"
+                     placeholder="Auto-calculated field">
+            </li>
+            <li>
+              <button id="details" type="button">Details</button>
+            </li>
+          </ul>
         </li>
         <li>
           <label for="sap_balance">SAP Balance:</label>
-          <input name="sap_balance" value="sap_balance">
+          <input name="sap_balance" id="sap_balance">
         </li>
         <li>
           <label for="remarks">Remarks:</label>
-          <input name="remarks" value="remarks">
+          <textarea name="remarks" id="remarks" placeholder="Enter any remarks..."></textarea>
         </li>
-        <li>
-          <input type="submit" value="Submit">
-          <button type="button">Clear</button>
+        <li id="submit_area">
+          <input type="submit" value="Submit" id="submit">
+          <button type="reset" id="clear">Clear</button>
         </li>
       </ul>
     </form>
   </div>
   <p id="welcome">Welcome, User</p>
+  <dialog id="details_dialog">
+    <h2>Details</h2>
+    <p class="separator"></p>
+    <ul>
+      <li>
+        <lable>Opening Balance (+) :</lable>
+        <input disabled
+               type="number"
+               name="details_opening_bal"
+               id="details_opening_bal">
+      </li>
+      <li>
+        <lable>Receive Qty (+) :</lable>
+        <input disabled type="number" name="details_rcv_qty" id="details_rcv_qty">
+      </li>
+      <li>
+        <lable>Consumption Qty (-) :</lable>
+        <input disabled
+               type="number"
+               name="details_consumption_qty"
+               id="details_consumption_qty">
+      </li>
+      <p></p>
+      <li>
+        <lable>Closing Balance:</lable>
+        <input disabled
+               type="number"
+               name="details_closing_bal"
+               id="details_closing_bal">
+      </li>
+    </ul>
+    <p class="separator"></p>
+    <button id="close_details">Close</button>
+  </dialog>
+  <script src="{%static 'chemical_intake_form/scripts.js'%}"></script>
 {% endblock %}
