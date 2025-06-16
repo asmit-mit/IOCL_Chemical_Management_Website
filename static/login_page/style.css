@@ -95,10 +95,6 @@ body {
   font-size: 12px;
 }
 
-.main {
-  flex: 1;
-}
-
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {
   -webkit-appearance: none;
@@ -110,6 +106,7 @@ input[type="number"] {
 }
 
 .main {
+  flex: 1;
   position: relative;
   width: 99%;
   margin-top: 20px;
@@ -262,4 +259,89 @@ input[type="number"] {
 
 #close_modal:active {
   background-color: midnightblue;
+}
+
+.login_form {
+  position: relative;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+
+  width: 500px;
+  height: 300px;
+
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 40px;
+  box-shadow: 0 0 20px black;
+}
+
+.login_form ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.login_form ul li {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding-left: 10px 0 10px 0;
+  margin: 0 10px 0 10px;
+}
+
+.login_form ul li h2 {
+  margin: 8px 0 0 0;
+  padding: 5px 0 5px 0;
+  text-align: center;
+  background-color: orangered;
+  border-top-left-radius: 30px;
+  border-top-right-radius: 30px;
+  font-size: 23px;
+  box-shadow: 0 5px 10px black;
+  color: white;
+  text-shadow: 0 2px 0 black;
+}
+
+.login_form ul li input {
+  height: 30px;
+  border-left: 5px solid red;
+  border-radius: 5px;
+}
+
+.login_form ul li label {
+  color: indigo;
+  padding-bottom: 5px;
+}
+
+.login_form li button {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+
+  margin-top: 5px;
+  height: 40px;
+  width: 100px;
+
+  background-color: blue;
+  border: 0;
+  border-radius: 10px;
+
+  box-shadow: 0 5px 0 midnightblue;
+
+  color: white;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.login_form li button:hover {
+  cursor: pointer;
+}
+
+.login_form li button:active {
+  top: 5px;
+  box-shadow: none;
 }

@@ -7,32 +7,6 @@
 {% endblock %}
 {% block title %}Chemical Intake Form{% endblock %}
 {% block main %}
-  <div class="sidebar">
-    <h2>Content Panel</h2>
-    <ul>
-      <li>
-        <a href="{% url 'entryform' %}">Entry Page</a>
-      </li>
-      <li>
-        <a href="{% url 'report' %}">Report Page</a>
-      </li>
-      <li>
-        <a href="#">Settings</a>
-      </li>
-      <li>
-        <a href="#">Logout</a>
-      </li>
-    </ul>
-    <p id="border"></p>
-    <img src="{% static 'base/images/iocl_no_subtext.png' %}" alt="IOCL_ICON">
-    <p>
-      Indian Oil Corporation
-      <br>
-      Limited
-      <br>
-      (Paradip Refinery)
-    </p>
-  </div>
   <div class="form" id="entryform">
     <p>Daily Chemical Management & Data Entry Panel</p>
     <form method="post">
@@ -119,7 +93,7 @@
       </ul>
     </form>
   </div>
-  <p id="welcome">Welcome, User</p>
+  <p id="welcome">Welcome, {{ user.username }}</p>
   <dialog id="details_dialog">
     <h2>Details</h2>
     <p class="separator"></p>

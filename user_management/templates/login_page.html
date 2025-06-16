@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Login Page</title>
+    {% load static %}
+    <link type="text/css"
+          href="{% static 'login_page/style.css' %}"
+          rel="stylesheet" />
+  </head>
+  <body>
+    <div class="wrapper">
+      <div class="header">
+        <ul>
+          <li>
+            <div class="title_icon">
+              <img src="{% static 'base/images/iocl.png' %}" alt="IOCL_LOGO" />
+            </div>
+            <p id="page_title">Daily Chemical Consumption Portal</p>
+          </li>
+          <li>Paradip Refinery</li>
+          <li id="clock"></li>
+        </ul>
+      </div>
+      <div class="main">
+        <form method="POST" class="login_form">
+          {% csrf_token %}
+          <ul>
+            <li>
+              <h2>Login</h2>
+            </li>
+            <li>
+              <label for="username">Username:</label>
+              <input type="" name="username" value="">
+            </li>
+            <li>
+              <label for="password">Password:</label>
+              <input type="password" name="password" value="">
+            </li>
+            <li>
+              <button type="submit">Login</button>
+            </li>
+          </ul>
+        </form>
+      </div>
+      <div class="footer">
+        <p>"Thanks For Visiting Our Daily Chemical Consumption Entry Page Developed By IS Department"</p>
+      </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
+    <script>
+      function updateClock() {
+        document.getElementById("clock").textContent = moment().format(
+          "dddd, D MMMM YYYY, h:mm:ss A",
+        );
+      }
+      updateClock();
+      setInterval(updateClock, 1000);
+    </script>
+    {% if messages %}
+      <dialog id="message_modal">
+        <ul class="messages">
+          {% for message in messages %}
+            <li {% if message.tags %}class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+          {% endfor %}
+        </ul>
+        <button id="glitch">lmao</button>
+        <button id="close_modal">Close</button>
+      </dialog>
+      <script>
+          document.addEventListener("DOMContentLoaded", function () {
+            const messageModal = document.getElementById("message_modal");
+            const closeModalButton = document.getElementById("close_modal");
+
+            if (messageModal) {
+              messageModal.showModal();
+
+              closeModalButton.addEventListener("click", function () {
+                messageModal.close();
+              });
+
+              messageModal.addEventListener("click", function (event) {
+                if (event.target === messageModal) {
+                  messageModal.close();
+                }
+              });
+            }
+          });
+      </script>
+    {% endif %}
+  </body>
+</html>
