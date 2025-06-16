@@ -11,23 +11,28 @@
     <li>
       <p>Data Report Panel</p>
     </li>
-    <form method="get">
+    <form method="POST">
+      {% csrf_token %}
       <li>
         <ul class="query">
           <li>
             <label for="unit">Select Unit: *</label>
             <select name="unit" id="unit">
-              <option value=""  selected disabled>Select Unit</option>
-              {% for unit in units %}<option value="{{ unit.code }}">{{ unit.name }}</option>{% endfor %}
+              <option disabled selected value="">Select Unit</option>
+              {% for item in data|dictsort:"unit_code" %}
+                {% ifchanged item.unit_code %}
+                  <option value="{{ item.unit_code }}">{{ item.unit_name }}</option>
+                {% endifchanged %}
+              {% endfor %}
             </select>
           </li>
           <li>
             <label for="chemical">Select Chemical: *</label>
             <select name="chemical" id="chemical">
               <option value="" selected disabled>Select Chemical</option>
-              {% for chemical in chemicals %}<option value="{{ chemical.code }}">{{ chemical.name }}</option>{% endfor %}
             </select>
           </li>
+          <script>const allData = JSON.parse('{{ data_json|escapejs }}');</script>
           <li>
             <label for="start_date">Select Start Date: *</label>
             <input type="date" id="start_date" name="start_date" min="" max="">
@@ -46,7 +51,7 @@
       </li>
     </form>
   </ul>
-  {% if show_table %}
+  {% if show_table and show_table is not None %}
     <table class="datasheet">
       <tr>
         <th>Date</th>
@@ -55,7 +60,6 @@
         <th>Consumption</th>
         <th>Closing Balance</th>
         <th>Stock Available in SAP</th>
-        <th>Stock Available for no. of Days(Field+SAP)</th>
       </tr>
       {% for data in table %}
         <tr>
@@ -65,7 +69,6 @@
           <td>{{ data.consumption }}</td>
           <td>{{ data.closing_balance }}</td>
           <td>{{ data.sap }}</td>
-          <td>{{ data.days_left }}</td>
         </tr>
       {% endfor %}
     </table>

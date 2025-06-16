@@ -1,3 +1,13 @@
+@keyframes slideLeftAndRight {
+  from {
+    transform: translateX(0);
+  }
+
+  to {
+    transform: translateX(calc(100% - 570px));
+  }
+}
+
 html,
 body {
   background-color: lightyellow;
@@ -200,8 +210,10 @@ input[type="number"] {
   border-radius: 8px;
   width: 99%;
   height: 23px;
+  min-height: 23px;
   margin-left: auto;
   margin-right: auto;
+  overflow-x: hidden;
 }
 
 .footer p {
@@ -210,6 +222,7 @@ input[type="number"] {
   font-style: italic;
   padding-left: 10px;
   margin-top: 5px;
+  animation: slideLeftAndRight 10s infinite alternate ease-in-out;
 }
 
 #message_modal {

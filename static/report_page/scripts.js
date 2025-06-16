@@ -30,3 +30,20 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 });
+
+document.getElementById("unit").addEventListener("change", function () {
+  const unitCode = this.value;
+  const chemicalSelect = document.getElementById("chemical");
+
+  chemicalSelect.innerHTML = '<option disabled selected value="">Select Chemical</option>';
+
+  if (!unitCode) return;
+
+  const chemicals = allData.filter((item) => item.unit_code === unitCode);
+  chemicals.forEach((chem) => {
+    const option = document.createElement("option");
+    option.value = chem.chemical_code;
+    option.textContent = chem.chemical_name;
+    chemicalSelect.appendChild(option);
+  });
+});

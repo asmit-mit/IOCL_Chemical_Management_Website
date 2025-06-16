@@ -51,3 +51,37 @@ detailsButton.addEventListener("click", () => {
 });
 
 closeButton.addEventListener("click", () => detailsDialog.close());
+
+document.getElementById("unit").addEventListener("change", function () {
+  const unitCode = this.value;
+  const chemicalSelect = document.getElementById("chemical");
+  const uomInput = document.getElementById("uom");
+
+  chemicalSelect.innerHTML = '<option disabled selected value="">Select Chemical</option>';
+  uomInput.value = "";
+
+  if (!unitCode) return;
+
+  const chemicals = allData.filter((item) => item.unit_code === unitCode);
+  chemicals.forEach((chem) => {
+    const option = document.createElement("option");
+    option.value = chem.chemical_code;
+    option.textContent = chem.chemical_name;
+    chemicalSelect.appendChild(option);
+  });
+});
+
+document.getElementById("chemical").addEventListener("change", function () {
+  const unitCode = document.getElementById("unit").value;
+  const chemicalCode = this.value;
+  const uomInput = document.getElementById("uom");
+
+  if (!unitCode || !chemicalCode) return;
+
+  const chemical = allData.find(
+    (item) => item.unit_code === unitCode && item.chemical_code === chemicalCode,
+  );
+  if (chemical) {
+    uomInput.value = chemical.unit;
+  }
+});

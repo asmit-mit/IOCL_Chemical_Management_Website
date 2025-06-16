@@ -6,3 +6,4 @@ chemical_management/__init__.py
 
 user_management/__pycache__
 user_management/__init__.py
+chemical_management/migrations/__pycache__
