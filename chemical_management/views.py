@@ -36,7 +36,9 @@ def entryform(request):
             or request.POST["chemical"] == ""
             or request.POST["smc"] == ""
             or request.POST["opening_balance"] == ""
+            or request.POST["receive_qty"] == ""
             or request.POST["consumption_qty"] == ""
+            or request.POST["sap_balance"] == ""
         ):
             messages.success(request, "Please enter all the required inputs.")
         else:
@@ -65,8 +67,6 @@ def entryform(request):
                 closing_balance=closing_balance,
                 sap=sap,
             )
-
-            print(entry)
 
     return render(request, "chemical_intake_form.html", context)
 
@@ -108,7 +108,6 @@ def report(request):
         elif "clear" in request.POST:
             context["show_table"] = False
         else:
-            context["show_table"] = True
             unit = request.POST["unit"]
             chemical = request.POST["chemical"]
             start_date = request.POST["start_date"]
@@ -120,16 +119,22 @@ def report(request):
                 chemical_code__chemical_code=chemical,
             )
 
-            for data in queryset:
-                context["table"].append(
-                    {
-                        "date": data.date,
-                        "opening_balance": data.opening_balance,
-                        "reciept": data.reciept,
-                        "consumption": data.consumption,
-                        "closing_balance": data.closing_balance,
-                        "sap": data.sap,
-                    }
+            if queryset.exists():
+                context["show_table"] = True
+                for data in queryset:
+                    context["table"].append(
+                        {
+                            "date": data.date,
+                            "opening_balance": data.opening_balance,
+                            "reciept": data.reciept,
+                            "consumption": data.consumption,
+                            "closing_balance": data.closing_balance,
+                            "sap": data.sap,
+                        }
+                    )
+            else:
+                messages.success(
+                    request, "No entry in the database for the entered inputs."
                 )
 
     return render(request, "report_page.html", context)
