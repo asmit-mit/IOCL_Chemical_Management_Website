@@ -60,7 +60,9 @@ document.getElementById("unit").addEventListener("change", function () {
   chemicalSelect.innerHTML = '<option disabled selected value="">Select Chemical</option>';
   uomInput.value = "";
 
-  if (!unitCode) return;
+  if (!unitCode) {
+    return;
+  }
 
   const chemicals = allData.filter((item) => item.unit_code === unitCode);
   chemicals.forEach((chem) => {
@@ -71,17 +73,44 @@ document.getElementById("unit").addEventListener("change", function () {
   });
 });
 
+document.getElementById("chemical").addEventListener("click", function () {
+  const unitCode = document.getElementById("unit");
+  const message_modal = document.querySelector("#message_modal");
+  const messagesList = message_modal.querySelector(".messages");
+
+  if (!unitCode.value) {
+    messagesList.innerHTML = "";
+    const newMessage = document.createElement("li");
+    newMessage.textContent = "Please select a unit first.";
+    messagesList.appendChild(newMessage);
+    message_modal.showModal();
+    return;
+  }
+});
+
 document.getElementById("chemical").addEventListener("change", function () {
   const unitCode = document.getElementById("unit").value;
   const chemicalCode = this.value;
   const uomInput = document.getElementById("uom");
+  const smcInput = document.getElementById("smc");
 
   if (!unitCode || !chemicalCode) return;
+
+  function getRandomString() {
+    const characters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+    let result = "";
+    for (let i = 0; i < 4; i++) {
+      const randomIndex = Math.floor(Math.random() * characters.length);
+      result += characters[randomIndex];
+    }
+    return result;
+  }
 
   const chemical = allData.find(
     (item) => item.unit_code === unitCode && item.chemical_code === chemicalCode,
   );
   if (chemical) {
     uomInput.value = chemical.unit;
+    smcInput.value = getRandomString();
   }
 });

@@ -133,7 +133,7 @@ input[type="number"] {
   left: 0;
   display: flex;
   flex-direction: column;
-  background-color: #00688a;
+  background-image: linear-gradient(135deg, #00688a, steelblue);
   width: 200px;
   height: 100%;
   border-radius: 20px;
@@ -156,33 +156,22 @@ input[type="number"] {
   margin-bottom: 30px;
   margin-top: 10px;
   line-height: 40px;
-}
-
-#logout {
-  background-color: #00688a;
-  color: white;
-  border: none;
-  font-weight: bold;
-  padding: 0;
-  font-size: 15px;
-}
-
-#logout:hover {
-  color: lightgray;
-  cursor: pointer;
-  text-decoration: underline;
+  position: relative;
 }
 
 .sidebar ul li a {
+  position: relative;
   color: white;
   font-weight: bold;
   text-decoration: none;
+  left: 0;
+  transition: left 0.3s ease;
 }
 
-.sidebar ul li a:hover,
-.sidebar ul li a:active {
+.sidebar ul li a:hover {
   color: lightgray;
   text-decoration: underline;
+  left: 15px;
 }
 
 #border {
@@ -194,6 +183,11 @@ input[type="number"] {
   height: auto;
   margin-left: auto;
   margin-right: auto;
+  transition: transform 0.3s ease;
+}
+
+.sidebar img:hover {
+  transform: scale(1.2);
 }
 
 .sidebar p {
