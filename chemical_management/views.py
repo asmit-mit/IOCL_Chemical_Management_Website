@@ -57,16 +57,32 @@ def entryform(request):
                 chemical_code=chemical_code,
             )
 
-            entry = DailyConsumptions.objects.create(
+            queryset = DailyConsumptions.objects.filter(
+                date=date,
                 unit_code=chemical_instance,
                 chemical_code=chemical_instance,
-                date=date,
-                opening_balance=opening_balance,
-                reciept=reciept,
-                consumption=consumption,
-                closing_balance=closing_balance,
-                sap=sap,
             )
+
+            if queryset.exists():
+                messages.success(
+                    request,
+                    "Entry for the entered date, unit and chemical already exists.",
+                )
+            else:
+                entry = DailyConsumptions.objects.create(
+                    unit_code=chemical_instance,
+                    chemical_code=chemical_instance,
+                    date=date,
+                    opening_balance=opening_balance,
+                    reciept=reciept,
+                    consumption=consumption,
+                    closing_balance=closing_balance,
+                    sap=sap,
+                )
+
+                entry.save()
+
+                messages.success(request, "Entry has been added.")
 
     return render(request, "chemical_intake_form.html", context)
 
