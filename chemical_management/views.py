@@ -11,6 +11,9 @@ from .models import ChemicalMaster, DailyConsumptions
 # Create your views here.
 def entryform(request):
     if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
         return redirect("user_login")
 
     data = ChemicalMaster.objects.all()
@@ -89,6 +92,9 @@ def entryform(request):
 
 def report(request):
     if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
         return redirect("user_login")
 
     data = ChemicalMaster.objects.all()
