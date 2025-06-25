@@ -1,0 +1,83 @@
+{% extends "base/base.html" %}
+{% block css_link %}
+  {% load static %}
+  <link type="text/css"
+        href="{% static 'monthly_report/style.css' %}"
+        rel="stylesheet" />
+{% endblock %}
+{% block title %}Monthly Report Page{% endblock %}
+{% block main %}
+  <ul class="content">
+    <li>
+      <p>Monthly Data Report Panel</p>
+    </li>
+    <form method="POST">
+      {% csrf_token %}
+      <li>
+        <ul class="query">
+          <li>
+            <label for="unit">Select Unit: *</label>
+            <select name="unit" id="unit">
+              <option disabled selected value="">Select Unit</option>
+            </select>
+          </li>
+          <li>
+            <label for="chemical">Select Chemical: *</label>
+            <select name="chemical" id="chemical">
+              <option value="" selected disabled>Select Chemical</option>
+            </select>
+          </li>
+          <li>
+            <label for="select-month">Select Month: *</label>
+            <select name="select-month" id="select-month">
+              <option value="" selected disabled>Select Month</option>
+              <option value="1">January</option>
+              <option value="2">February</option>
+              <option value="3">March</option>
+              <option value="4">April</option>
+              <option value="5">May</option>
+              <option value="6">June</option>
+              <option value="7">July</option>
+              <option value="8">August</option>
+              <option value="9">September</option>
+              <option value="10">October</option>
+              <option value="11">November</option>
+              <option value="12">December</option>
+            </select>
+          </li>
+        </ul>
+      </li>
+      <li id="button_area">
+        <div class="buttons">
+          <button type="submit" name="submit" id="submit">Get Report</button>
+          <button type="submit" name="clear" id="clear">Clear</button>
+        </div>
+      </li>
+    </form>
+  </ul>
+  {% if show_table and show_table is not None %}
+    <table class="datasheet">
+      <tr>
+        <th>Date</th>
+        <th>Chemical</th>
+        <th>Opening Balance</th>
+        <th>Reciept</th>
+        <th>Consumption</th>
+        <th>Closing Balance</th>
+        <th>Stock Available in SAP</th>
+      </tr>
+      {% for data in table %}
+        <tr>
+          <td>{{ data.date }}</td>
+          <td>{{ data.chemical }}</td>
+          <td>{{ data.opening_balance }}</td>
+          <td>{{ data.reciept }}</td>
+          <td>{{ data.consumption }}</td>
+          <td>{{ data.closing_balance }}</td>
+          <td>{{ data.sap }}</td>
+        </tr>
+      {% endfor %}
+    </table>
+  {% endif %}
+  <script src="{% static 'monthly_report/scripts.js' %}"></script>
+{% endblock %}

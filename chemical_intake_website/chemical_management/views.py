@@ -3,7 +3,7 @@ import json
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.serializers import serialize
-from django.shortcuts import get_object_or_404, redirect, render
+from django.shortcuts import HttpResponse, get_object_or_404, redirect, render
 
 from .models import ChemicalMaster, DailyConsumptions
 
@@ -16,21 +16,22 @@ def entryform(request):
         )
         return redirect("user_login")
 
-    data = ChemicalMaster.objects.all()
-    data_json = serialize("json", data)
-    data_json = json.dumps(
-        list(
-            data.values(
-                "unit_code",
-                "unit_name",
-                "chemical_code",
-                "chemical_name",
-                "unit",
+    dropdown_dict = {}
+    dropdown_data = ChemicalMaster.objects.all()
+    for item in dropdown_data:
+        if item.unit_code not in dropdown_dict:
+            dropdown_dict[item.unit_code] = {
+                "unit_name": item.unit_name,
+                "chemicals": [{item.chemical_code: item.chemical_name}],
+            }
+        else:
+            dropdown_dict[item.unit_code]["chemicals"].append(
+                {item.chemical_code: item.chemical_name}
             )
-        )
-    )
 
-    context = {"data": data, "data_json": data_json}
+    dropdown_json = json.dumps(dropdown_dict)
+
+    context = {"dropdown_json": dropdown_json}
 
     if request.POST:
         if (
@@ -97,6 +98,16 @@ def report(request):
         )
         return redirect("user_login")
 
+    return render(request, "report_page.html")
+
+
+def daily_report(request):
+    if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
+        return redirect("user_login")
+
     data = ChemicalMaster.objects.all()
     data_json = serialize("json", data)
     data_json = json.dumps(
@@ -112,54 +123,84 @@ def report(request):
     )
 
     context = {
-        "data": data,
         "data_json": data_json,
         "show_table": False,
         "table": [],
     }
 
     if request.POST:
-        if (
-            request.POST["start_date"] == ""
-            or request.POST["end_date"] == ""
-            or request.POST["unit"] == ""
-            or request.POST["chemical"] == ""
-        ) and "clear" not in request.POST:
-            messages.success(request, "Please fill all the required inputs.")
+        if "clear" in request.POST:
             context["show_table"] = False
-        elif "clear" in request.POST:
-            context["show_table"] = False
-        else:
-            unit = request.POST["unit"]
-            chemical = request.POST["chemical"]
-            start_date = request.POST["start_date"]
-            end_date = request.POST["end_date"]
+            return render(request, "daily_report.html", context)
 
-            queryset = DailyConsumptions.objects.filter(
-                date__range=[start_date, end_date],
-                unit_code__unit_code=unit,
-                chemical_code__chemical_code=chemical,
-            )
-
-            if queryset.exists():
-                context["show_table"] = True
-                for data in queryset:
-                    context["table"].append(
-                        {
-                            "date": data.date,
-                            "opening_balance": data.opening_balance,
-                            "reciept": data.reciept,
-                            "consumption": data.consumption,
-                            "closing_balance": data.closing_balance,
-                            "sap": data.sap,
-                        }
-                    )
-            else:
+        try:
+            if (
+                request.POST.get("start_date", "") == ""
+                or request.POST.get("end_date", "") == ""
+                or request.POST.get("unit", "") == ""
+                or request.POST.get("chemical", "") == ""
+            ) and "success" in request.POST:
                 messages.success(
-                    request, "No entry in the database for the entered inputs."
+                    request, "Please fill all the required inputs."
+                )
+                context["show_table"] = False
+            else:
+                unit = request.POST["unit"]
+                chemical = request.POST["chemical"]
+                start_date = request.POST["start_date"]
+                end_date = request.POST["end_date"]
+
+                queryset = DailyConsumptions.objects.filter(
+                    date__range=[start_date, end_date],
+                    unit_code__unit_code=unit,
+                    chemical_code__chemical_code=chemical,
                 )
 
-    return render(request, "report_page.html", context)
+                if queryset.exists():
+                    context["show_table"] = True
+                    for data in queryset:
+                        code = ChemicalMaster.objects.get(
+                            chemical_code=data.chemical_code
+                        )
+                        chemical = code.chemical_name
+                        context["table"].append(
+                            {
+                                "date": data.date,
+                                "chemical": chemical,
+                                "opening_balance": data.opening_balance,
+                                "reciept": data.reciept,
+                                "consumption": data.consumption,
+                                "closing_balance": data.closing_balance,
+                                "sap": data.sap,
+                            }
+                        )
+                else:
+                    messages.success(
+                        request,
+                        "No entry in the database for the entered inputs.",
+                    )
+        except Exception as e:
+            messages.success(request, "Please fill all the required inputs.")
+
+    return render(request, "daily_report.html", context)
+
+
+def monthly_report(request):
+    if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
+        return redirect("user_login")
+
+    return render(request, "monthly_report.html")
+
+
+def analytics(request):
+    return HttpResponse("Analytics page")
+
+
+def settings(request):
+    return HttpResponse("settings")
 
 
 def user_logout(request):

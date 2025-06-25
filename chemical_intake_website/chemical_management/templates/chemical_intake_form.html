@@ -12,6 +12,7 @@
     <form method="post">
       {% csrf_token %}
       <ul>
+        <script>const dropdownData = {{ dropdown_json|safe }};</script>
         <li>
           <label for="date">Select Date: *</label>
           <input type="date" id="date" name="date" min="" max="">
@@ -39,10 +40,21 @@
               <label for="uom">Unit Of Measurement(UOM):</label>
               <input name="uom" id="uom" disabled>
             </li>
-            <script>const allData = JSON.parse('{{ data_json|escapejs }}');</script>
             <li>
-              <label for="smc">Sap Material Code: *</label>
-              <input name="smc" id="smc">
+              <label for="smc">Sap Material Code:</label>
+              <input name="smc" id="smc" disabled>
+            </li>
+          </ul>
+        </li>
+        <li>
+          <ul id="uomsmc">
+            <li>
+              <label for="avg-consume">Avg Consumption (Last 7 days):</label>
+              <input name="avg-consume" id="avg-consume" disabled>
+            </li>
+            <li>
+              <label for="sap-stock">Sap Stock:</label>
+              <input name="sap-stock" id="sap-stock" disabled>
             </li>
           </ul>
         </li>

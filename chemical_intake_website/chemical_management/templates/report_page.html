@@ -7,71 +7,16 @@
 {% endblock %}
 {% block title %}Report Page{% endblock %}
 {% block main %}
-  <ul class="content">
+  <ul class='report-button-list'>
     <li>
-      <p>Data Report Panel</p>
+      <p>Report Views</p>
     </li>
-    <form method="POST">
-      {% csrf_token %}
-      <li>
-        <ul class="query">
-          <li>
-            <label for="unit">Select Unit: *</label>
-            <select name="unit" id="unit">
-              <option disabled selected value="">Select Unit</option>
-              {% for item in data|dictsort:"unit_code" %}
-                {% ifchanged item.unit_code %}
-                  <option value="{{ item.unit_code }}">{{ item.unit_name }}</option>
-                {% endifchanged %}
-              {% endfor %}
-            </select>
-          </li>
-          <li>
-            <label for="chemical">Select Chemical: *</label>
-            <select name="chemical" id="chemical">
-              <option value="" selected disabled>Select Chemical</option>
-            </select>
-          </li>
-          <script>const allData = JSON.parse('{{ data_json|escapejs }}');</script>
-          <li>
-            <label for="start_date">Select Start Date: *</label>
-            <input type="date" id="start_date" name="start_date" min="" max="">
-          </li>
-          <li>
-            <label for="end_date">Select End Date: *</label>
-            <input type="date" id="end_date" name="end_date" min="" max="">
-          </li>
-        </ul>
-      </li>
-      <li id="button_area">
-        <div class="buttons">
-          <button type="submit" name="submit" id="submit">Get Report</button>
-          <button type="submit" name="clear" id="clear">Clear</button>
-        </div>
-      </li>
-    </form>
+    <li class="report-buttons">
+      <button id="daily-report-button" type="submit">Go to Date-Wise Report</button>
+    </li>
+    <li class="report-buttons">
+      <button id="monthly-report-button" type="submit">Go to Month-Wise Report</button>
+    </li>
   </ul>
-  {% if show_table and show_table is not None %}
-    <table class="datasheet">
-      <tr>
-        <th>Date</th>
-        <th>Opening Balance</th>
-        <th>Reciept</th>
-        <th>Consumption</th>
-        <th>Closing Balance</th>
-        <th>Stock Available in SAP</th>
-      </tr>
-      {% for data in table %}
-        <tr>
-          <td>{{ data.date }}</td>
-          <td>{{ data.opening_balance }}</td>
-          <td>{{ data.reciept }}</td>
-          <td>{{ data.consumption }}</td>
-          <td>{{ data.closing_balance }}</td>
-          <td>{{ data.sap }}</td>
-        </tr>
-      {% endfor %}
-    </table>
-  {% endif %}
   <script src="{% static 'report_page/scripts.js' %}"></script>
 {% endblock %}

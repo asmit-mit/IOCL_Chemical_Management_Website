@@ -13,12 +13,13 @@
 .form p {
   font-size: 20px;
   color: white;
-  padding: 4px 0px 4px 16px;
+  padding: 4px 0 6px 0;
   margin: 6px 6px 0 6px;
   background-color: blue;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   box-shadow: 0 5px 10px black;
+  text-align: center;
 }
 
 .form form ul {
