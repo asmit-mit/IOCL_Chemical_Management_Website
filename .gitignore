@@ -9,3 +9,4 @@ chemical_management/migrations/__pycache__
 chemical_management/migrations/__init__.py
 user_management/migrations/__pycache__
 user_management/migrations/__init__.py
+chemical_intake_website/chemical_management/migrations
