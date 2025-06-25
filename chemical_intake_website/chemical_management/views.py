@@ -3,7 +3,6 @@ import random
 
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.core.serializers import serialize
 from django.shortcuts import HttpResponse, get_object_or_404, redirect, render
 
 from .models import ChemicalMaster, DailyConsumptions
@@ -186,24 +185,24 @@ def daily_report(request):
                 start_date = request.POST["start_date"]
                 end_date = request.POST["end_date"]
 
-                queryset = DailyConsumptions.objects.filter(
-                    date__range=[start_date, end_date],
-                    unit_code__unit_code=unit,
-                    chemical_code__chemical_code=chemical,
-                )
-
-                chemical_instance = get_object_or_404(
-                    ChemicalMaster,
-                    unit_code=unit,
-                    chemical_code=chemical,
-                )
+                if chemical == "all":
+                    queryset = DailyConsumptions.objects.filter(
+                        date__range=[start_date, end_date],
+                        unit_code__unit_code=unit,
+                    )
+                else:
+                    queryset = DailyConsumptions.objects.filter(
+                        date__range=[start_date, end_date],
+                        unit_code__unit_code=unit,
+                        chemical_code__chemical_code=chemical,
+                    )
 
                 if queryset.exists():
                     for data in queryset:
                         context["table"].append(
                             {
                                 "date": data.date,
-                                "chemical": chemical_instance.chemical_name,
+                                "chemical": data.chemical_code.chemical_name,
                                 "opening_balance": data.opening_balance,
                                 "reciept": data.reciept,
                                 "consumption": data.consumption,

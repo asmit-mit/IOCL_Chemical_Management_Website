@@ -11,7 +11,8 @@
     <li>
       <p>Monthly Data Report Panel</p>
     </li>
-    <form method="POST">
+    <script>const data_json = {{ data_json|safe }};</script>
+    <form method="POST" id="montly-form">
       {% csrf_token %}
       <li>
         <ul class="query">
@@ -50,12 +51,12 @@
       <li id="button_area">
         <div class="buttons">
           <button type="submit" name="submit" id="submit">Get Report</button>
-          <button type="submit" name="clear" id="clear">Clear</button>
+          <button type="reset" name="clear" id="clear">Clear</button>
         </div>
       </li>
     </form>
   </ul>
-  {% if show_table and show_table is not None %}
+  {% if show_table %}
     <table class="datasheet">
       <tr>
         <th>Date</th>
