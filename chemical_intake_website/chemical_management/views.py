@@ -1,5 +1,6 @@
 import json
 import random
+from datetime import datetime
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -70,7 +71,6 @@ def entryform(request):
             or request.POST["unit"] == ""
             or request.POST["chemical"] == ""
             or request.POST["smc"] == ""
-            or request.POST["opening_balance"] == ""
             or request.POST["receive_qty"] == ""
             or request.POST["consumption_qty"] == ""
             or request.POST["sap_balance"] == ""
@@ -167,7 +167,6 @@ def daily_report(request):
     context["data_json"] = data_json
 
     if request.POST:
-        print(request.POST)
         try:
             if (
                 request.POST.get("start_date", "") == ""
@@ -203,7 +202,6 @@ def daily_report(request):
                             {
                                 "date": data.date,
                                 "chemical": data.chemical_code.chemical_name,
-                                "opening_balance": data.opening_balance,
                                 "reciept": data.reciept,
                                 "consumption": data.consumption,
                                 "closing_balance": data.closing_balance,
@@ -217,7 +215,7 @@ def daily_report(request):
                         "No entry in the database for the entered inputs.",
                     )
                     context["show_table"] = False
-        except Exception as e:
+        except Exception:
             messages.success(request, "Please fill all the required inputs.")
             context["show_table"] = False
 
@@ -231,7 +229,94 @@ def monthly_report(request):
         )
         return redirect("user_login")
 
-    return render(request, "monthly_report.html")
+    context = {
+        "show_table": False,
+        "table": [],
+    }
+
+    data_dict = {}
+    dropdown_data = ChemicalMaster.objects.all()
+
+    for item in dropdown_data:
+        if item.unit_code not in data_dict:
+            data_dict[item.unit_code] = {
+                "unit_name": item.unit_name,
+                "chemicals": [
+                    {
+                        item.chemical_code: item.chemical_name,
+                    }
+                ],
+            }
+        else:
+            data_dict[item.unit_code]["chemicals"].append(
+                {item.chemical_code: item.chemical_name}
+            )
+
+    data_json = json.dumps(data_dict)
+
+    context["data_json"] = data_json
+
+    if request.POST:
+        print(request.POST)
+        try:
+            if (
+                request.POST.get("select-month", "") == ""
+                or request.POST.get("unit", "") == ""
+                or request.POST.get("chemical", "") == ""
+            ) and "success" in request.POST:
+                messages.success(
+                    request, "Please fill all the required inputs."
+                )
+                context["show_table"] = False
+            else:
+                unit = request.POST["unit"]
+                chemical = request.POST["chemical"]
+                month = int(request.POST["select-month"])
+
+                current_year = datetime.now().year
+
+                if chemical == "all":
+                    monthly_data = DailyConsumptions.objects.filter(
+                        unit_code__unit_code=unit,
+                        date__year=current_year,
+                        date__month=month,
+                    ).order_by("-date")
+                    print(monthly_data)
+                else:
+                    monthly_data = DailyConsumptions.objects.filter(
+                        unit_code__unit_code=unit,
+                        chemical_code__chemical_code=chemical,
+                        date__year=current_year,
+                        date__month=month,
+                    ).order_by("-date")
+
+                if monthly_data.exists():
+                    for data in monthly_data:
+                        context["table"].append(
+                            {
+                                "date": data.date,
+                                "chemical": data.chemical_code.chemical_name,
+                                "reciept": data.reciept,
+                                "consumption": data.consumption,
+                                "closing_balance": data.closing_balance,
+                                "sap": data.sap,
+                            }
+                        )
+                    context["show_table"] = True
+                else:
+                    messages.success(
+                        request,
+                        "No entry in the database for the entered inputs.",
+                    )
+                    context["show_table"] = False
+
+        except Exception as e:
+            messages.success(
+                request, f"Please fill all the required inputs. {e}"
+            )
+            context["show_table"] = False
+
+    return render(request, "monthly_report.html", context)
 
 
 def analytics(request):

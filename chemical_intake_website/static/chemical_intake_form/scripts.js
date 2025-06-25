@@ -81,7 +81,7 @@ unit_dropdown.addEventListener("change", function () {
   }
 });
 
-chemical_dropdown.getElementById("chemical").addEventListener("change", function () {
+chemical_dropdown.addEventListener("change", function () {
   const uom = document.getElementById("uom");
   const smc = document.getElementById("smc");
   const avg_consume = document.getElementById("avg-consume");
