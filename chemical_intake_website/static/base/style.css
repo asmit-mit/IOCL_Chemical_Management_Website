@@ -8,6 +8,10 @@
   }
 }
 
+input:disabled {
+  background-color: lightgrey;
+}
+
 html,
 body {
   background-color: lightyellow;

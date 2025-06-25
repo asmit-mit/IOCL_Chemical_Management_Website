@@ -12,7 +12,7 @@
     <form method="post">
       {% csrf_token %}
       <ul>
-        <script>const dropdownData = {{ dropdown_json|safe }};</script>
+        <script>const data_json = {{ data_json|safe }};</script>
         <li>
           <label for="date">Select Date: *</label>
           <input type="date" id="date" name="date" min="" max="">
@@ -21,11 +21,6 @@
           <label for="unit">Select Unit: *</label>
           <select name="unit" id="unit">
             <option disabled selected value="">Select Unit</option>
-            {% for item in data|dictsort:"unit_code" %}
-              {% ifchanged item.unit_code %}
-                <option value="{{ item.unit_code }}">{{ item.unit_name }}</option>
-              {% endifchanged %}
-            {% endfor %}
           </select>
         </li>
         <li>

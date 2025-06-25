@@ -1,4 +1,5 @@
 import json
+import random
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -16,22 +17,53 @@ def entryform(request):
         )
         return redirect("user_login")
 
-    dropdown_dict = {}
+    data_dict = {}
     dropdown_data = ChemicalMaster.objects.all()
+
     for item in dropdown_data:
-        if item.unit_code not in dropdown_dict:
-            dropdown_dict[item.unit_code] = {
+        consumption_data = DailyConsumptions.objects.filter(
+            chemical_code=item,
+            unit_code=item,
+        ).order_by("-date")[:7]
+
+        if consumption_data.exists():
+            sap_stock = consumption_data[0].sap
+        else:
+            sap_stock = 0
+
+        sap_material_code = "".join(random.choices("0123456789", k=4))
+        avg_consume = 0
+
+        consumption_values = [
+            record.consumption for record in consumption_data
+        ]
+
+        if consumption_values:
+            avg_consume = sum(consumption_values) / len(consumption_values)
+        else:
+            avg_consume = 0
+
+        if item.unit_code not in data_dict:
+            data_dict[item.unit_code] = {
                 "unit_name": item.unit_name,
-                "chemicals": [{item.chemical_code: item.chemical_name}],
+                "chemicals": [
+                    {
+                        item.chemical_code: item.chemical_name,
+                        "avg_consume": avg_consume,
+                        "uom": item.unit,
+                        "smc": sap_material_code,
+                        "sap_stock": sap_stock,
+                    }
+                ],
             }
         else:
-            dropdown_dict[item.unit_code]["chemicals"].append(
+            data_dict[item.unit_code]["chemicals"].append(
                 {item.chemical_code: item.chemical_name}
             )
 
-    dropdown_json = json.dumps(dropdown_dict)
+    data_json = json.dumps(data_dict)
 
-    context = {"dropdown_json": dropdown_json}
+    context = {"data_json": data_json}
 
     if request.POST:
         if (
@@ -108,31 +140,35 @@ def daily_report(request):
         )
         return redirect("user_login")
 
-    data = ChemicalMaster.objects.all()
-    data_json = serialize("json", data)
-    data_json = json.dumps(
-        list(
-            data.values(
-                "unit_code",
-                "unit_name",
-                "chemical_code",
-                "chemical_name",
-                "unit",
-            )
-        )
-    )
-
     context = {
-        "data_json": data_json,
         "show_table": False,
         "table": [],
     }
 
-    if request.POST:
-        if "clear" in request.POST:
-            context["show_table"] = False
-            return render(request, "daily_report.html", context)
+    data_dict = {}
+    dropdown_data = ChemicalMaster.objects.all()
 
+    for item in dropdown_data:
+        if item.unit_code not in data_dict:
+            data_dict[item.unit_code] = {
+                "unit_name": item.unit_name,
+                "chemicals": [
+                    {
+                        item.chemical_code: item.chemical_name,
+                    }
+                ],
+            }
+        else:
+            data_dict[item.unit_code]["chemicals"].append(
+                {item.chemical_code: item.chemical_name}
+            )
+
+    data_json = json.dumps(data_dict)
+
+    context["data_json"] = data_json
+
+    if request.POST:
+        print(request.POST)
         try:
             if (
                 request.POST.get("start_date", "") == ""
@@ -156,17 +192,18 @@ def daily_report(request):
                     chemical_code__chemical_code=chemical,
                 )
 
+                chemical_instance = get_object_or_404(
+                    ChemicalMaster,
+                    unit_code=unit,
+                    chemical_code=chemical,
+                )
+
                 if queryset.exists():
-                    context["show_table"] = True
                     for data in queryset:
-                        code = ChemicalMaster.objects.get(
-                            chemical_code=data.chemical_code
-                        )
-                        chemical = code.chemical_name
                         context["table"].append(
                             {
                                 "date": data.date,
-                                "chemical": chemical,
+                                "chemical": chemical_instance.chemical_name,
                                 "opening_balance": data.opening_balance,
                                 "reciept": data.reciept,
                                 "consumption": data.consumption,
@@ -174,13 +211,16 @@ def daily_report(request):
                                 "sap": data.sap,
                             }
                         )
+                    context["show_table"] = True
                 else:
                     messages.success(
                         request,
                         "No entry in the database for the entered inputs.",
                     )
+                    context["show_table"] = False
         except Exception as e:
             messages.success(request, "Please fill all the required inputs.")
+            context["show_table"] = False
 
     return render(request, "daily_report.html", context)
 

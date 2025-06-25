@@ -67,6 +67,10 @@
   font-weight: bold;
 }
 
+input:disabled {
+  background-color: lightgrey;
+}
+
 #uomsmc,
 #closing_balance {
   margin: 0;

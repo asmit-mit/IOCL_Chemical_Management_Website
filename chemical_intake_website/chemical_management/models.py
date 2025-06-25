@@ -36,6 +36,7 @@ class DailyConsumptions(models.Model):
     consumption = models.FloatField()
     closing_balance = models.FloatField()
     sap = models.FloatField()
+    remarks = models.CharField(max_length=255, default="No Remarks")
 
     class Meta:
         constraints = [
