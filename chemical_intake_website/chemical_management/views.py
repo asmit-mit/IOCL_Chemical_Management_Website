@@ -24,8 +24,7 @@ def entryform(request):
 
     for item in dropdown_data:
         consumption_data = DailyConsumptions.objects.filter(
-            chemical_code=item,
-            unit_code=item,
+            chemical_code=item, unit_code=item, consumption__gt=0
         ).order_by("-date")[:7]
 
         if consumption_data.exists():
@@ -38,6 +37,11 @@ def entryform(request):
 
         consumption_values = [
             record.consumption for record in consumption_data
+        ]
+
+        consumption_data_list = [
+            [record.date.strftime("%Y-%m-%d"), record.consumption]
+            for record in consumption_data
         ]
 
         if consumption_values:
@@ -55,12 +59,20 @@ def entryform(request):
                         "uom": item.unit,
                         "smc": sap_material_code,
                         "sap_stock": sap_stock,
+                        "consumption_data": consumption_data_list,
                     }
                 ],
             }
         else:
             data_dict[item.unit_code]["chemicals"].append(
-                {item.chemical_code: item.chemical_name}
+                {
+                    item.chemical_code: item.chemical_name,
+                    "avg_consume": avg_consume,
+                    "uom": item.unit,
+                    "smc": sap_material_code,
+                    "sap_stock": sap_stock,
+                    "consumption_data": consumption_data_list,
+                }
             )
 
     data_json = json.dumps(data_dict)
@@ -72,7 +84,6 @@ def entryform(request):
             request.POST["date"] == ""
             or request.POST["unit"] == ""
             or request.POST["chemical"] == ""
-            or request.POST["smc"] == ""
             or request.POST["receive_qty"] == ""
             or request.POST["consumption_qty"] == ""
             or request.POST["sap_balance"] == ""
@@ -87,6 +98,7 @@ def entryform(request):
             consumption = request.POST["consumption_qty"]
             closing_balance = request.POST["closing_balance"]
             sap = request.POST["sap_balance"]
+            remarks = request.POST["remarks"]
 
             chemical_instance = get_object_or_404(
                 ChemicalMaster,
@@ -115,6 +127,7 @@ def entryform(request):
                     consumption=consumption,
                     closing_balance=closing_balance,
                     sap=sap,
+                    remarks=remarks,
                 )
 
                 entry.save()
@@ -208,6 +221,7 @@ def daily_report(request):
                                 "consumption": data.consumption,
                                 "closing_balance": data.closing_balance,
                                 "sap": data.sap,
+                                "remarks": data.remarks,
                             }
                         )
                     context["show_table"] = True

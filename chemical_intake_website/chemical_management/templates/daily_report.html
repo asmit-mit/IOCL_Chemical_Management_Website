@@ -55,6 +55,7 @@
         <th>Consumption</th>
         <th>Closing Balance</th>
         <th>Stock Available in SAP</th>
+        <th>Remarks</th>
       </tr>
       {% for data in table %}
         <tr>
@@ -64,6 +65,7 @@
           <td>{{ data.consumption }}</td>
           <td>{{ data.closing_balance }}</td>
           <td>{{ data.sap }}</td>
+          <td>{{ data.remarks }}</td>
         </tr>
       {% endfor %}
     </table>

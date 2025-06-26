@@ -87,13 +87,13 @@ chemical_dropdown.addEventListener("click", function () {
   const alertMessage = document.getElementById("alert-message");
 
   if (date.value === "") {
-    alertMessage.textContent = "Please select a date.";
+    alertMessage.textContent = "Please select a date first.";
     alertlog.showModal();
     return;
   }
 
   if (unit_dropdown.value === "") {
-    alertMessage.textContent = "Please select a unit.";
+    alertMessage.textContent = "Please select a unit first.";
     alertlog.showModal();
     return;
   }
@@ -116,6 +116,48 @@ chemical_dropdown.addEventListener("change", function () {
       smc.value = chemical.smc || 0;
       avg_consume.value = chemical.avg_consume || 0;
       sap_stock.value = chemical.sap_stock || 0;
+
+      const entry_form = document.getElementById("entryform");
+      const table_container = document.querySelector(".table-container");
+
+      if (avg_consume.value !== "0") {
+        entry_form.style.width = "40%";
+        entry_form.style.left = "270px";
+        table_container.removeAttribute("hidden");
+
+        const chemical_data = data_json[selected_unit]["chemicals"];
+        for (const chemical of chemical_data) {
+          const [chemical_code, chemical_name] = Object.entries(chemical)[0];
+          if (chemical_code === selected_chemical) {
+            const consumption_data = chemical["consumption_data"];
+            consumption_data.forEach((record) => {
+              const recordDate = record[0];
+              const recordConsumption = record[1];
+
+              const row = document.createElement("tr");
+
+              const date_td = document.createElement("td");
+              date_td.textContent = recordDate;
+
+              const consumption_td = document.createElement("td");
+              consumption_td.textContent = recordConsumption;
+
+              const table_body = document.querySelector(".recent-data-table tbody");
+
+              row.appendChild(date_td);
+              row.appendChild(consumption_td);
+
+              table_body.appendChild(row);
+            });
+            break;
+          }
+        }
+      } else {
+        entry_form.style.width = "58%";
+        entry_form.style.left = "270px";
+        table_container.setAttribute("hidden", "");
+      }
+
       return;
     }
   }

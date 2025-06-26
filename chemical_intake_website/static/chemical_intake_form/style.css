@@ -1,7 +1,6 @@
 .form {
   position: relative;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 270px;
   width: 58%;
   border: 1px solid black;
   border-radius: 8px;
@@ -210,4 +209,33 @@
 .separator {
   margin: 0 5px 0 5px;
   border-top: 2px solid black;
+}
+
+.table-container {
+  position: absolute;
+  left: calc(40% + 320px);
+  top: 2px;
+  width: 31%;
+  background-color: white;
+  border: 1px solid black;
+  border-radius: 5px;
+}
+
+.recent-data-table {
+  width: 100%;
+  background-color: black;
+  color: white;
+  border-radius: 3px;
+}
+
+.recent-data-table tr th {
+  height: 30px;
+  background-color: blue;
+  border-radius: 5px;
+}
+
+.recent-data-table tr td {
+  background-color: white;
+  color: black;
+  text-align: center;
 }

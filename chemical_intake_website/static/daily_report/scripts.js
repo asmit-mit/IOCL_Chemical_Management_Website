@@ -76,3 +76,14 @@ clear_button.addEventListener("click", function () {
   datasheetTable.setAttribute("hidden", "");
   history.replaceState(null, null, window.location.href);
 });
+
+chemical_dropdown.addEventListener("click", function () {
+  const alertlog = document.getElementById("alert-log");
+  const alertMessage = document.getElementById("alert-message");
+
+  if (unit_dropdown.value === "") {
+    alertMessage.textContent = "Please select a unit first.";
+    alertlog.showModal();
+    return;
+  }
+});
