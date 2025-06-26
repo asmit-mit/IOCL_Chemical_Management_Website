@@ -53,6 +53,15 @@
           </p>
         </div>
         {% block main %}<h1>Default Content</h1>{% endblock %}
+        <dialog id="alert-log">
+          <p id="alert-message"></p>
+          <button onclick="closeDialog()">Close</button>
+        </dialog>
+        <script>
+          function closeDialog() {
+            document.getElementById("alert-log").close();
+          }
+        </script>
       </div>
       <div class="footer">
         <p>"Thanks For Visiting Our Daily Chemical Consumption Entry Page Developed By IS Department"</p>

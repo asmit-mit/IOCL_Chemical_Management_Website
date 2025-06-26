@@ -81,6 +81,24 @@ unit_dropdown.addEventListener("change", function () {
   }
 });
 
+chemical_dropdown.addEventListener("click", function () {
+  const date = document.getElementById("date");
+  const alertlog = document.getElementById("alert-log");
+  const alertMessage = document.getElementById("alert-message");
+
+  if (date.value === "") {
+    alertMessage.textContent = "Please select a date.";
+    alertlog.showModal();
+    return;
+  }
+
+  if (unit_dropdown.value === "") {
+    alertMessage.textContent = "Please select a unit.";
+    alertlog.showModal();
+    return;
+  }
+});
+
 chemical_dropdown.addEventListener("change", function () {
   const uom = document.getElementById("uom");
   const smc = document.getElementById("smc");

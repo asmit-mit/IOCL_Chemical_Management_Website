@@ -224,7 +224,8 @@ input[type="number"] {
   animation: slideLeftAndRight 10s infinite alternate ease-in-out;
 }
 
-#message_modal {
+#message_modal,
+#alert-log {
   position: relative;
   background-color: palegoldenrod;
   border-radius: 20px;
@@ -232,6 +233,7 @@ input[type="number"] {
   font-style: italic;
   font-weight: bold;
   box-shadow: 3px 5px 0 black;
+  height: 73px;
 }
 
 .messages {
@@ -256,7 +258,8 @@ input[type="number"] {
   background-color: midnightblue;
 }
 
-#close_modal {
+#close_modal,
+#alert-log button {
   position: absolute;
   left: 50%;
   transform: translateX(-50%);
@@ -268,10 +271,12 @@ input[type="number"] {
   border-radius: 5px;
 }
 
-#close_modal:hover {
+#close_modal:hover,
+#alert-log button:hover {
   background-color: cadetblue;
 }
 
-#close_modal:active {
+#close_modal:active,
+#alert-log button:active {
   background-color: midnightblue;
 }
