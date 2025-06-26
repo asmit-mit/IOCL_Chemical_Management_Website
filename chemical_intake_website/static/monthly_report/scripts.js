@@ -39,7 +39,7 @@ unit_dropdown.addEventListener("change", function () {
 });
 
 clear_button.addEventListener("click", function () {
-  const datasheetTable = document.querySelector(".datasheet");
-  datasheetTable.setAttribute("hidden", "");
+  const table = document.querySelector(".scrollable-table-container");
+  table.setAttribute("hidden", "");
   history.replaceState(null, null, window.location.href);
 });

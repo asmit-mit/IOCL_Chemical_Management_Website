@@ -57,26 +57,56 @@
     </form>
   </ul>
   {% if show_table %}
-    <table class="datasheet">
-      <tr>
-        <th>Date</th>
-        <th>Chemical</th>
-        <th>Reciept</th>
-        <th>Consumption</th>
-        <th>Closing Balance</th>
-        <th>Stock Available in SAP</th>
-      </tr>
-      {% for data in table %}
-        <tr>
-          <td>{{ data.date }}</td>
-          <td>{{ data.chemical }}</td>
-          <td>{{ data.reciept }}</td>
-          <td>{{ data.consumption }}</td>
-          <td>{{ data.closing_balance }}</td>
-          <td>{{ data.sap }}</td>
+    <div class="scrollable-table-container">
+      <table class="outer-table">
+        <tr class="first-row">
+          <th class="first-column">Chemical -></th>
+          {% for chemical in records_with_dates.0.records %}
+            <th class='chemical-column'>{{ chemical.chemical_name }}</th>
+          {% endfor %}
         </tr>
-      {% endfor %}
-    </table>
+        <tr class="second-row">
+          <th class="first-column">Date</th>
+          {% for chemical in records_with_dates.0.records %}
+            <td>
+              <table class="inner-table">
+                <tr>
+                  <th class="inner-first-column">
+                    <p>Receive</p>
+                  </th>
+                  <th class="inner-second-column">
+                    <p>Consumption</p>
+                  </th>
+                </tr>
+              </table>
+            </td>
+          {% endfor %}
+        </tr>
+        {% for day_data in records_with_dates %}
+          <tr>
+            <td class='date-data'>{{ day_data.date }}</td>
+            {% for record in day_data.records %}
+              <td>
+                <table class='inner-data-table'>
+                  <tr>
+                    <td class='inner-data-first-column'>
+                      <p>{{ record.reciept }}</p>
+                    </td>
+                    <td class='inner-data-second-column'>
+                      <p>{{ record.consumption }}</p>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+        <tr class="last-row">
+          <td class="last-row-header">Closing Balance</td>
+          {% for item in closing_balance_record %}<td>{{ item }}</td>{% endfor %}
+        </tr>
+      </table>
+    </div>
   {% endif %}
   <script src="{% static 'monthly_report/scripts.js' %}"></script>
 {% endblock %}

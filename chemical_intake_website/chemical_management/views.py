@@ -1,6 +1,8 @@
+import calendar
 import json
 import random
-from datetime import datetime
+from collections import defaultdict
+from datetime import date, datetime
 
 from django.contrib import messages
 from django.contrib.auth import logout
@@ -231,7 +233,6 @@ def monthly_report(request):
 
     context = {
         "show_table": False,
-        "table": [],
     }
 
     data_dict = {}
@@ -257,7 +258,6 @@ def monthly_report(request):
     context["data_json"] = data_json
 
     if request.POST:
-        print(request.POST)
         try:
             if (
                 request.POST.get("select-month", "") == ""
@@ -268,52 +268,92 @@ def monthly_report(request):
                     request, "Please fill all the required inputs."
                 )
                 context["show_table"] = False
-            else:
-                unit = request.POST["unit"]
-                chemical = request.POST["chemical"]
-                month = int(request.POST["select-month"])
 
-                current_year = datetime.now().year
+                return render(request, "monthly_report.html", context)
 
-                if chemical == "all":
-                    monthly_data = DailyConsumptions.objects.filter(
-                        unit_code__unit_code=unit,
-                        date__year=current_year,
-                        date__month=month,
-                    ).order_by("-date")
-                    print(monthly_data)
-                else:
-                    monthly_data = DailyConsumptions.objects.filter(
-                        unit_code__unit_code=unit,
-                        chemical_code__chemical_code=chemical,
-                        date__year=current_year,
-                        date__month=month,
-                    ).order_by("-date")
+            unit = request.POST["unit"]
+            chemical = request.POST["chemical"]
+            month = int(request.POST["select-month"])
 
-                if monthly_data.exists():
-                    for data in monthly_data:
-                        context["table"].append(
-                            {
-                                "date": data.date,
-                                "chemical": data.chemical_code.chemical_name,
-                                "reciept": data.reciept,
-                                "consumption": data.consumption,
-                                "closing_balance": data.closing_balance,
-                                "sap": data.sap,
-                            }
+            chemicals_in_record = data_dict[unit]["chemicals"]
+
+            current_year = datetime.now().year
+            _, total_days = calendar.monthrange(current_year, month)
+
+            closing_balance_record = []
+
+            for record in chemicals_in_record:
+                for chemical_code, chemical_name in record.items():
+                    last_record = (
+                        DailyConsumptions.objects.filter(
+                            date__year=current_year,
+                            date__month=month,
+                            unit_code__unit_code=unit,
+                            chemical_code__chemical_code=chemical_code,
                         )
-                    context["show_table"] = True
-                else:
-                    messages.success(
-                        request,
-                        "No entry in the database for the entered inputs.",
+                        .order_by("-date")
+                        .first()
                     )
-                    context["show_table"] = False
 
-        except Exception as e:
-            messages.success(
-                request, f"Please fill all the required inputs. {e}"
-            )
+                    if last_record:
+                        closing_balance_record.append(
+                            last_record.closing_balance
+                        )
+                    else:
+                        closing_balance_record.append(0)
+
+            if chemical != "all":
+                for chem_dict in chemicals_in_record:
+                    for key, value in chem_dict.items():
+                        if key == chemical:
+                            chemicals_in_record = [{key: value}]
+                            break
+
+            records_with_dates = []
+
+            for day in range(1, total_days + 1):
+                current_date = date(current_year, month, day)
+                current_date_str = current_date.strftime("%Y-%m-%d")
+                day_records = []
+
+                for record in chemicals_in_record:
+                    for chemical_code, chemical_name in record.items():
+                        daily_consumption = DailyConsumptions.objects.filter(
+                            date=current_date,
+                            unit_code__unit_code=unit,
+                            chemical_code__chemical_code=chemical_code,
+                        ).first()
+
+                        if daily_consumption:
+                            day_records.append(
+                                {
+                                    "chemical_name": chemical_name,
+                                    "reciept": daily_consumption.reciept,
+                                    "consumption": daily_consumption.consumption,
+                                }
+                            )
+                        else:
+                            day_records.append(
+                                {
+                                    "chemical_name": chemical_name,
+                                    "reciept": 0,
+                                    "consumption": 0,
+                                }
+                            )
+
+                records_with_dates.append(
+                    {"date": current_date_str, "records": day_records}
+                )
+
+            context = {
+                "records_with_dates": records_with_dates,
+                "closing_balance_record": closing_balance_record,
+            }
+            context["show_table"] = True
+            context["data_json"] = data_json
+
+        except Exception:
+            messages.success(request, "Please fill all the required inputs.")
             context["show_table"] = False
 
     return render(request, "monthly_report.html", context)
