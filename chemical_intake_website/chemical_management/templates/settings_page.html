@@ -1,0 +1,11 @@
+{% extends "base/base.html" %}
+{% block css_link %}
+  {% load static %}
+  <link type="text/css"
+        href="{% static 'settings/style.css' %}"
+        rel="stylesheet" />
+{% endblock %}
+{% block title %}Settings Page{% endblock %}
+{% block main %}
+  <script src="{% static 'settings/scripts.js' %}"></script>
+{% endblock %}

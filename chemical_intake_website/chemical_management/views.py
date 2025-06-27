@@ -6,16 +6,15 @@ from datetime import date, datetime
 from io import BytesIO
 
 import matplotlib
-
-matplotlib.use("Agg")
-
 import matplotlib.pyplot as plt
 from django.contrib import messages
 from django.contrib.auth import logout
-from django.db.models import Avg, OuterRef, Subquery
-from django.shortcuts import HttpResponse, get_object_or_404, redirect, render
+from django.db.models import Avg
+from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import ChemicalMaster, DailyConsumptions
+
+matplotlib.use("Agg")
 
 
 # Create your views here.
@@ -311,6 +310,13 @@ def monthly_report(request):
             current_year = datetime.now().year
             _, total_days = calendar.monthrange(current_year, month)
 
+            if chemical != "all":
+                for chem_dict in chemicals_in_record:
+                    for key, value in chem_dict.items():
+                        if key == chemical:
+                            chemicals_in_record = [{key: value}]
+                            break
+
             closing_balance_record = []
 
             for record in chemicals_in_record:
@@ -331,14 +337,7 @@ def monthly_report(request):
                             last_record.closing_balance
                         )
                     else:
-                        closing_balance_record.append(0)
-
-            if chemical != "all":
-                for chem_dict in chemicals_in_record:
-                    for key, value in chem_dict.items():
-                        if key == chemical:
-                            chemicals_in_record = [{key: value}]
-                            break
+                        closing_balance_record.append(0.0)
 
             records_with_dates = []
 
@@ -367,8 +366,8 @@ def monthly_report(request):
                             day_records.append(
                                 {
                                     "chemical_name": chemical_name,
-                                    "reciept": 0,
-                                    "consumption": 0,
+                                    "reciept": 0.0,
+                                    "consumption": 0.0,
                                 }
                             )
 
@@ -487,7 +486,7 @@ def analytics(request):
 
 
 def settings(request):
-    return HttpResponse("settings")
+    return render(request, "settings_page.html")
 
 
 def user_logout(request):

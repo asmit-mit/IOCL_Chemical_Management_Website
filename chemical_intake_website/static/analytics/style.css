@@ -15,18 +15,20 @@
 }
 
 h1 {
-  font-size: 23px;
+  font-size: 30px;
   border-bottom: 2px dashed black;
   padding-bottom: 5px;
   margin: 0 0 20px 0;
   color: red;
   width: 100%;
+  text-shadow: 1px 2px 1px black;
 }
 
 .scrollable-table-container {
   width: 100%;
   background-color: white;
   border-radius: 5px;
+  box-shadow: 2px 2px 5px black;
 }
 
 #analytics-table {
