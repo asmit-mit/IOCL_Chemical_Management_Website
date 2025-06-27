@@ -1,15 +1,19 @@
 import base64
 import calendar
+import csv
 import json
 import random
+import tkinter as tk
 from datetime import date, datetime
 from io import BytesIO
+from tkinter import filedialog
 
 import matplotlib
 import matplotlib.pyplot as plt
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.db.models import Avg
+from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
 from .models import ChemicalMaster, DailyConsumptions
@@ -390,6 +394,12 @@ def monthly_report(request):
 
 
 def analytics(request):
+    if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
+        return redirect("user_login")
+
     context = {}
 
     analytics_data = []
@@ -486,9 +496,201 @@ def analytics(request):
 
 
 def settings(request):
+    if not request.user.is_authenticated:
+        messages.success(
+            request, "Your session has expired. Please login again."
+        )
+        return redirect("user_login")
+
     if request.POST:
-        color = request.POST.get("color")
-        request.session["background_color"] = color
+        if "color" in request.POST:
+            color = request.POST.get("color")
+            request.session["background_color"] = color
+        elif "clear_consumption_data" in request.POST:
+            messages.success(
+                request, "Cleared all data in DailyConsumptions Database."
+            )
+            DailyConsumptions.objects.all().delete()
+            return render(request, "settings_page.html")
+        elif "download_consumption_data" in request.POST:
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = (
+                'attachment; filename="Daily_Consumption_Data.csv"'
+            )
+
+            writer = csv.writer(response)
+            writer.writerow(
+                [
+                    "Date",
+                    "Unit Code",
+                    "Unit Name",
+                    "Chemical Code",
+                    "Chemical Name",
+                    "Opening Balance",
+                    "Reciept",
+                    "Consumption",
+                    "Closing Balance",
+                    "Sap Stock",
+                    "Remarks",
+                ]
+            )
+
+            records = DailyConsumptions.objects.all().values_list(
+                "date",
+                "unit_code__unit_code",
+                "unit_code__unit_name",
+                "chemical_code__chemical_code",
+                "chemical_code__chemical_name",
+                "opening_balance",
+                "reciept",
+                "consumption",
+                "closing_balance",
+                "sap",
+                "remarks",
+            )
+
+            for rec in records:
+                writer.writerow(rec)
+
+            return response
+
+        elif "import_consumption_csv" in request.POST:
+            root = tk.Tk()
+            root.withdraw()
+
+            file_path = filedialog.askopenfilename(
+                title="Select a File",
+                filetypes=(("CSV files", "*.csv"),),
+            )
+
+            DailyConsumptions.objects.all().delete()
+
+            try:
+                with open(file_path) as f:
+                    reader = csv.reader(f)
+                    next(reader)
+                    for row in reader:
+
+                        try:
+                            chemical_instance = get_object_or_404(
+                                ChemicalMaster,
+                                unit_code=row[1],
+                                chemical_code=row[3],
+                            )
+                        except Exception as e:
+                            messages.success(
+                                request,
+                                f"We got an error: {e}",
+                            )
+                            return render(request, "settings_page.html")
+
+                        entry = DailyConsumptions.objects.create(
+                            date=row[0],
+                            unit_code=chemical_instance,
+                            chemical_code=chemical_instance,
+                            opening_balance=row[5],
+                            reciept=row[6],
+                            consumption=row[7],
+                            closing_balance=row[8],
+                            sap=row[9],
+                            remarks=row[10],
+                        )
+
+                        entry.save()
+
+                        if not entry:
+                            break
+
+            except Exception as e:
+                messages.success(
+                    request,
+                    f"We got an error: {e}",
+                )
+                DailyConsumptions.objects.all().delete()
+                return render(request, "settings_page.html")
+
+            messages.success(request, "CSV file successfully imported.")
+            return render(request, "settings_page.html")
+
+        elif "clear_chemical_data" in request.POST:
+            messages.success(
+                request,
+                "Cleared all data in ChemicalMaster and DailyConsumptions.",
+            )
+            DailyConsumptions.objects.all().delete()
+            ChemicalMaster.objects.all().delete()
+            return render(request, "settings_page.html")
+
+        elif "download_chemical_data" in request.POST:
+            response = HttpResponse(content_type="text/csv")
+            response["Content-Disposition"] = (
+                'attachment; filename="Chemical_Master_Data.csv"'
+            )
+
+            writer = csv.writer(response)
+            writer.writerow(
+                [
+                    "Unit Code",
+                    "Unit Name",
+                    "Chemical Code",
+                    "Chemical Name",
+                    "Unit of Measurement",
+                ]
+            )
+
+            records = ChemicalMaster.objects.all().values_list(
+                "unit_code",
+                "unit_name",
+                "chemical_code",
+                "chemical_name",
+                "unit",
+            )
+
+            for rec in records:
+                writer.writerow(rec)
+
+            return response
+
+        elif "import_chemical_csv" in request.POST:
+            root = tk.Tk()
+            root.withdraw()
+
+            file_path = filedialog.askopenfilename(
+                title="Select a File",
+                filetypes=(("CSV files", "*.csv"),),
+            )
+
+            ChemicalMaster.objects.all().delete()
+
+            try:
+                with open(file_path) as f:
+                    reader = csv.reader(f)
+                    next(reader)
+                    for row in reader:
+
+                        entry = ChemicalMaster.objects.create(
+                            unit_code=row[0],
+                            unit_name=row[1],
+                            chemical_code=row[2],
+                            chemical_name=row[3],
+                            unit=row[4],
+                        )
+
+                        entry.save()
+
+                        if not entry:
+                            break
+
+            except Exception as e:
+                messages.success(
+                    request,
+                    f"We got an error: {e}",
+                )
+                ChemicalMaster.objects.all().delete()
+                return render(request, "settings_page.html")
+
+            messages.success(request, "CSV file successfully imported.")
+
     return render(request, "settings_page.html")
 
 

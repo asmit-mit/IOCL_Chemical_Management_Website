@@ -10,7 +10,7 @@
   <div class="content">
     <ul>
       <li class="page-header">Settings</li>
-      <li class="settings-color">Select Background Color</li>
+      <li class="section-header">Select Background Color</li>
       <li>
         <ul>
           <li>
@@ -27,6 +27,32 @@
               <button type="submit" name="color" value="aquamarine" id="aquamarine-button"></button>
               <button type="submit" name="color" value="teal" id="teal-button"></button>
               <button type="submit" name="color" value="#282828" id="gruv-button"></button>
+            </form>
+          </li>
+        </ul>
+      </li>
+      <li class="section-header">Consumption Database Settings</li>
+      <li>
+        <ul>
+          <li>
+            <form method="POST" class="database-settings">
+              {% csrf_token %}
+              <button type="submit" name="clear_consumption_data">Clear Database</button>
+              <button type="submit" name="download_consumption_data">Download All Data</button>
+              <button type="submit" name="import_consumption_csv">Import CSV File</button>
+            </form>
+          </li>
+        </ul>
+      </li>
+      <li class="section-header">Chemicals Database Settings</li>
+      <li>
+        <ul>
+          <li>
+            <form method="POST" class="database-settings">
+              {% csrf_token %}
+              <button type="submit" name="clear_chemical_data">Clear Database</button>
+              <button type="submit" name="download_chemical_data">Download All Data</button>
+              <button type="submit" name="import_chemical_csv">Import CSV File</button>
             </form>
           </li>
         </ul>

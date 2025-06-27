@@ -25,18 +25,18 @@
   font-size: 20px;
   color: white;
   padding: 4px 0 6px 14px;
-  margin-bottom: 30px;
   background-color: blue;
   border-top-left-radius: 6px;
   border-top-right-radius: 6px;
   box-shadow: 0 5px 10px black;
 }
 
-.settings-color {
+.section-header {
   font-size: 20px;
   border-bottom: 2px dashed black;
   padding-bottom: 5px;
   padding-left: 10px;
+  margin-top: 30px;
   color: red;
   width: calc(100% - 10px);
   font-weight: bold;
@@ -53,10 +53,12 @@
   height: 50px;
   border: none;
   border-radius: 10px;
+  transition: width 0.3s ease;
 }
 
 .color-section button:hover {
   opacity: 0.7;
+  width: 190px;
 }
 
 #antiquewhite-button {
@@ -77,4 +79,26 @@
 
 #gruv-button {
   background-color: #282828;
+}
+
+.database-settings button {
+  background-color: blue;
+  box-shadow: 0 4px 0 midnightblue;
+  height: 30px;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  margin-top: 20px;
+  margin-left: 5px;
+  padding: 2px 12px;
+  position: relative;
+  cursor: pointer;
+  outline: none;
+  font-weight: bold;
+}
+
+.database-settings button:active {
+  position: relative;
+  top: 4px;
+  box-shadow: none;
 }
