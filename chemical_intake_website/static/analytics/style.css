@@ -1,0 +1,57 @@
+.content {
+  position: relative;
+  top: 10px;
+  left: 250px;
+  width: 75%;
+  padding: 20px 20px 30px 20px;
+  background-color: white;
+  border: 2px solid black;
+  border-radius: 20px;
+  box-shadow: 5px 0 30px black;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 15px;
+}
+
+h1 {
+  font-size: 23px;
+  border-bottom: 2px dashed black;
+  padding-bottom: 5px;
+  margin: 0 0 20px 0;
+  color: red;
+  width: 100%;
+}
+
+.scrollable-table-container {
+  width: 100%;
+  background-color: white;
+  border-radius: 5px;
+}
+
+#analytics-table {
+  width: 100%;
+  background-color: black;
+  border-radius: 5px;
+}
+
+.header-row {
+  height: 30px;
+  color: white;
+  background-color: blue;
+}
+
+#analytics-table td {
+  text-align: center;
+  background-color: white;
+}
+
+.separator {
+  margin: 20px 0 20px 0;
+  border-top: 2px dashed black;
+  width: 100%;
+}
+
+.statistics-img {
+  max-width: 100%;
+}

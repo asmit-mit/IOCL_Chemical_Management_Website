@@ -2,6 +2,9 @@ const unit_dropdown = document.getElementById("unit");
 const chemical_dropdown = document.getElementById("chemical");
 const forms = document.querySelectorAll("form");
 
+const entry_form = document.getElementById("entryform");
+const table_container = document.querySelector(".table-container");
+
 window.onload = function () {
   forms.forEach((form) => form.reset());
 
@@ -117,9 +120,6 @@ chemical_dropdown.addEventListener("change", function () {
       avg_consume.value = chemical.avg_consume || 0;
       sap_stock.value = chemical.sap_stock || 0;
 
-      const entry_form = document.getElementById("entryform");
-      const table_container = document.querySelector(".table-container");
-
       if (avg_consume.value !== "0") {
         entry_form.style.width = "40%";
         entry_form.style.left = "270px";
@@ -167,3 +167,22 @@ chemical_dropdown.addEventListener("change", function () {
   avg_consume.value = 0;
   sap_stock.value = 0;
 });
+
+document.getElementById("clear").addEventListener("click", function () {
+  entry_form.style.width = "58%";
+  entry_form.style.left = "270px";
+  table_container.setAttribute("hidden", "");
+  return;
+});
+
+// const all_inputs = document.querySelectorAll("input");
+//
+// all_inputs.forEach((input) => {
+//   input.addEventListener("change", function () {
+//     if (input.value !== "") {
+//       input.style.borderLeftColor = "green";
+//     } else {
+//       input.style.borderLeftColor = "red";
+//     }
+//   });
+// });

@@ -1,0 +1,40 @@
+{% extends "base/base.html" %}
+{% block css_link %}
+  {% load static %}
+  <link type="text/css"
+        href="{% static 'analytics/style.css' %}"
+        rel="stylesheet" />
+{% endblock %}
+{% block title %}Analytics Page{% endblock %}
+{% block main %}
+  <div class="content">
+    <h1>Chemical Consumption Pattern and Analytics</h1>
+    <div class="scrollable-table-container">
+      <table id="analytics-table">
+        <tr class="header-row">
+          <th>Name</th>
+          <th>Average Consumption (7 days)</th>
+          <th>Current Stock</th>
+          <th>Sap Stock</th>
+          <th>Total Stock</th>
+          <th>Coverage</th>
+        </tr>
+        {% for item in analytics %}
+          <tr>
+            <td>{{ item.chemical_name }} ({{ item.unit_name }})</td>
+            <td>{{ item.avg_consumption }}</td>
+            <td>{{ item.latest_closing_balance }}</td>
+            <td>{{ item.latest_sap }}</td>
+            <td>{{ item.total_stock }}</td>
+            <td>{{ item.coverage }}</td>
+          </tr>
+        {% endfor %}
+      </table>
+    </div>
+    <p class="separator"></p>
+    <img src="data:image/png;base64,{{ chart }}"
+         alt="STATISTICS_IMG"
+         class="statistics-img">
+  </div>
+  <script src="{% static 'analytics/scripts.js' %}"></script>
+{% endblock %}

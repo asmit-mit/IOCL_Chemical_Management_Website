@@ -1,11 +1,18 @@
+import base64
 import calendar
 import json
 import random
-from collections import defaultdict
 from datetime import date, datetime
+from io import BytesIO
 
+import matplotlib
+
+matplotlib.use("Agg")
+
+import matplotlib.pyplot as plt
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.db.models import Avg, OuterRef, Subquery
 from django.shortcuts import HttpResponse, get_object_or_404, redirect, render
 
 from .models import ChemicalMaster, DailyConsumptions
@@ -80,59 +87,69 @@ def entryform(request):
     context = {"data_json": data_json}
 
     if request.POST:
-        if (
-            request.POST["date"] == ""
-            or request.POST["unit"] == ""
-            or request.POST["chemical"] == ""
-            or request.POST["receive_qty"] == ""
-            or request.POST["consumption_qty"] == ""
-            or request.POST["sap_balance"] == ""
-        ):
-            messages.success(request, "Please enter all the required inputs.")
-        else:
-            date = request.POST["date"]
-            unit_code = request.POST["unit"]
-            chemical_code = request.POST["chemical"]
-            opening_balance = request.POST["opening_balance"]
-            reciept = request.POST["receive_qty"]
-            consumption = request.POST["consumption_qty"]
-            closing_balance = request.POST["closing_balance"]
-            sap = request.POST["sap_balance"]
-            remarks = request.POST["remarks"]
-
-            chemical_instance = get_object_or_404(
-                ChemicalMaster,
-                unit_code=unit_code,
-                chemical_code=chemical_code,
-            )
-
-            queryset = DailyConsumptions.objects.filter(
-                date=date,
-                unit_code=chemical_instance,
-                chemical_code=chemical_instance,
-            )
-
-            if queryset.exists():
+        try:
+            if (
+                request.POST["date"] == ""
+                or request.POST["unit"] == ""
+                or request.POST["chemical"] == ""
+                or request.POST["receive_qty"] == ""
+                or request.POST["consumption_qty"] == ""
+                or request.POST["sap_balance"] == ""
+            ):
                 messages.success(
-                    request,
-                    "Entry for the entered date, unit and chemical already exists.",
+                    request, "Please enter all the required inputs."
                 )
             else:
-                entry = DailyConsumptions.objects.create(
-                    unit_code=chemical_instance,
-                    chemical_code=chemical_instance,
-                    date=date,
-                    opening_balance=opening_balance,
-                    reciept=reciept,
-                    consumption=consumption,
-                    closing_balance=closing_balance,
-                    sap=sap,
-                    remarks=remarks,
+                date = request.POST["date"]
+                unit_code = request.POST["unit"]
+                chemical_code = request.POST["chemical"]
+                opening_balance = request.POST["opening_balance"]
+                reciept = request.POST["receive_qty"]
+                consumption = request.POST["consumption_qty"]
+                closing_balance = request.POST["closing_balance"]
+                sap = request.POST["sap_balance"]
+                remarks = request.POST["remarks"]
+
+                if remarks == "":
+                    remarks = "No Remarks"
+
+                chemical_instance = get_object_or_404(
+                    ChemicalMaster,
+                    unit_code=unit_code,
+                    chemical_code=chemical_code,
                 )
 
-                entry.save()
+                queryset = DailyConsumptions.objects.filter(
+                    date=date,
+                    unit_code=chemical_instance,
+                    chemical_code=chemical_instance,
+                )
 
-                messages.success(request, "Entry has been added.")
+                if queryset.exists():
+                    messages.success(
+                        request,
+                        "Entry for the entered date, unit and chemical already exists.",
+                    )
+                else:
+                    entry = DailyConsumptions.objects.create(
+                        unit_code=chemical_instance,
+                        chemical_code=chemical_instance,
+                        date=date,
+                        opening_balance=opening_balance,
+                        reciept=reciept,
+                        consumption=consumption,
+                        closing_balance=closing_balance,
+                        sap=sap,
+                        remarks=remarks,
+                    )
+
+                    entry.save()
+
+                    messages.success(request, "Entry has been added.")
+        except KeyError as e:
+            messages.error(request, f"Missing input: {str(e)}")
+        except Exception as e:
+            messages.error(request, f"An error occurred: {str(e)}")
 
     return render(request, "chemical_intake_form.html", context)
 
@@ -374,7 +391,99 @@ def monthly_report(request):
 
 
 def analytics(request):
-    return HttpResponse("Analytics page")
+    context = {}
+
+    analytics_data = []
+    pairs = DailyConsumptions.objects.values(
+        "unit_code",
+        "unit_code__unit_name",
+        "chemical_code",
+        "chemical_code__chemical_name",
+    ).distinct()
+
+    today = datetime.today()
+    current_month = today.month
+    current_year = today.year
+
+    graph_data = {}
+
+    for pair in pairs:
+        unit_code = pair["unit_code"]
+        chemical_code = pair["chemical_code"]
+        unit_name = pair["unit_code__unit_name"]
+        chemical_name = pair["chemical_code__chemical_name"]
+
+        latest = (
+            DailyConsumptions.objects.filter(
+                unit_code=unit_code, chemical_code=chemical_code
+            )
+            .order_by("-date")
+            .first()
+        )
+
+        last_7_entries = DailyConsumptions.objects.filter(
+            unit_code=unit_code, chemical_code=chemical_code, consumption__gt=0
+        ).order_by("-date")[:7]
+
+        avg_consumption = last_7_entries.aggregate(Avg("consumption"))[
+            "consumption__avg"
+        ]
+        total_stock = latest.closing_balance + latest.sap
+        coverage = (
+            round(total_stock / (avg_consumption * 31), 2)
+            if avg_consumption
+            else 0
+        )
+
+        analytics_data.append(
+            {
+                "unit_name": unit_name,
+                "chemical_name": chemical_name,
+                "avg_consumption": avg_consumption,
+                "latest_closing_balance": latest.closing_balance,
+                "latest_sap": latest.sap,
+                "total_stock": total_stock,
+                "coverage": coverage,
+            }
+        )
+
+        monthly_data = DailyConsumptions.objects.filter(
+            unit_code=unit_code,
+            chemical_code=chemical_code,
+            date__year=current_year,
+            date__month=current_month,
+        ).order_by("date")
+
+        dates = list(monthly_data.values_list("date", flat=True))
+        consumptions = list(monthly_data.values_list("consumption", flat=True))
+
+        pair_label = f"{unit_name} - {chemical_name}"
+        graph_data[pair_label] = (dates, consumptions)
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    colors = plt.cm.tab10.colors
+    for i, (label, (dates, consumptions)) in enumerate(graph_data.items()):
+        ax.plot(
+            dates, consumptions, label=label, color=colors[i % len(colors)]
+        )
+
+    ax.set_title("Monthly Data Consumption Chart", fontsize=16)
+    ax.set_xlabel("Date", fontsize=12)
+    ax.set_ylabel("Consumption", fontsize=12)
+    ax.legend(fontsize=10)
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    plt.close(fig)
+
+    image_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    context["analytics"] = analytics_data
+    context["chart"] = image_data
+
+    return render(request, "analytics.html", context)
 
 
 def settings(request):
