@@ -486,6 +486,9 @@ def analytics(request):
 
 
 def settings(request):
+    if request.POST:
+        color = request.POST.get("color")
+        request.session["background_color"] = color
     return render(request, "settings_page.html")
 
 

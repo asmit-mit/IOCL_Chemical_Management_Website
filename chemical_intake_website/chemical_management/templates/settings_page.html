@@ -7,5 +7,31 @@
 {% endblock %}
 {% block title %}Settings Page{% endblock %}
 {% block main %}
+  <div class="content">
+    <ul>
+      <li class="page-header">Settings</li>
+      <li class="settings-color">Select Background Color</li>
+      <li>
+        <ul>
+          <li>
+            <form method="post" class="color-section">
+              {% csrf_token %}
+              <button type="submit"
+                      name="color"
+                      value="lightyellow"
+                      id="lightyellow-button"></button>
+              <button type="submit"
+                      name="color"
+                      value="antiquewhite"
+                      id="antiquewhite-button"></button>
+              <button type="submit" name="color" value="aquamarine" id="aquamarine-button"></button>
+              <button type="submit" name="color" value="teal" id="teal-button"></button>
+              <button type="submit" name="color" value="#282828" id="gruv-button"></button>
+            </form>
+          </li>
+        </ul>
+      </li>
+    </ul>
+  </div>
   <script src="{% static 'settings/scripts.js' %}"></script>
 {% endblock %}

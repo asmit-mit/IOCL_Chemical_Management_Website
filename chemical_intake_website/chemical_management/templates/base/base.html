@@ -7,6 +7,11 @@
     {% load static %}
     <link type="text/css" href="{% static 'base/style.css' %}" rel="stylesheet" />
     {% block css_link %}{% endblock %}
+    <style>
+        body {
+            background-color: {{ background_color }};
+        }
+    </style>
   </head>
   <body>
     <div class="wrapper">
