@@ -1,7 +1,7 @@
 .form {
   position: relative;
   left: 270px;
-  width: 58%;
+  width: calc(100% - 340px);
   border: 1px solid black;
   border-radius: 8px;
   background-color: white;

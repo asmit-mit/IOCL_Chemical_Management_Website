@@ -12,6 +12,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from django.contrib import messages
 from django.contrib.auth import logout
+from django.core.cache import cache
 from django.db.models import Avg
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
@@ -148,7 +149,9 @@ def entryform(request):
 
                     entry.save()
 
+                    cache.delete("analytics_data")
                     messages.success(request, "Entry has been added.")
+
         except KeyError as e:
             messages.error(request, f"Missing input: {str(e)}")
         except Exception as e:
@@ -401,96 +404,130 @@ def analytics(request):
         return redirect("user_login")
 
     context = {}
+    if cache.get("analytics_data") is None:
 
-    analytics_data = []
-    pairs = DailyConsumptions.objects.values(
-        "unit_code",
-        "unit_code__unit_name",
-        "chemical_code",
-        "chemical_code__chemical_name",
-    ).distinct()
+        analytics_data = []
+        pairs = DailyConsumptions.objects.values(
+            "unit_code",
+            "unit_code__unit_name",
+            "chemical_code",
+            "chemical_code__chemical_name",
+        ).distinct()
 
-    today = datetime.today()
-    current_month = today.month
-    current_year = today.year
+        today = datetime.today()
+        current_month = today.month
+        current_year = today.year
 
-    graph_data = {}
+        unit_graph_data = {}
 
-    for pair in pairs:
-        unit_code = pair["unit_code"]
-        chemical_code = pair["chemical_code"]
-        unit_name = pair["unit_code__unit_name"]
-        chemical_name = pair["chemical_code__chemical_name"]
+        for pair in pairs:
+            unit_code = pair["unit_code"]
+            chemical_code = pair["chemical_code"]
+            unit_name = pair["unit_code__unit_name"]
+            chemical_name = pair["chemical_code__chemical_name"]
 
-        latest = (
-            DailyConsumptions.objects.filter(
-                unit_code=unit_code, chemical_code=chemical_code
+            latest = (
+                DailyConsumptions.objects.filter(
+                    unit_code=unit_code, chemical_code=chemical_code
+                )
+                .order_by("-date")
+                .first()
             )
-            .order_by("-date")
-            .first()
-        )
 
-        last_7_entries = DailyConsumptions.objects.filter(
-            unit_code=unit_code, chemical_code=chemical_code, consumption__gt=0
-        ).order_by("-date")[:7]
+            last_7_entries = DailyConsumptions.objects.filter(
+                unit_code=unit_code,
+                chemical_code=chemical_code,
+                consumption__gt=0,
+            ).order_by("-date")[:7]
 
-        avg_consumption = last_7_entries.aggregate(Avg("consumption"))[
-            "consumption__avg"
-        ]
-        total_stock = latest.closing_balance + latest.sap
-        coverage = (
-            round(total_stock / (avg_consumption * 31), 2)
-            if avg_consumption
-            else 0
-        )
+            avg_consumption = round(
+                last_7_entries.aggregate(Avg("consumption"))[
+                    "consumption__avg"
+                ],
+                2,
+            )
+            total_stock = round(latest.closing_balance + latest.sap, 2)
+            coverage = (
+                round(total_stock / (avg_consumption * 31), 2)
+                if avg_consumption
+                else 0
+            )
 
-        analytics_data.append(
-            {
-                "unit_name": unit_name,
-                "chemical_name": chemical_name,
-                "avg_consumption": avg_consumption,
-                "latest_closing_balance": latest.closing_balance,
-                "latest_sap": latest.sap,
-                "total_stock": total_stock,
-                "coverage": coverage,
-            }
-        )
+            analytics_data.append(
+                {
+                    "unit_name": unit_name,
+                    "chemical_name": chemical_name,
+                    "avg_consumption": avg_consumption,
+                    "latest_closing_balance": latest.closing_balance,
+                    "latest_sap": latest.sap,
+                    "total_stock": total_stock,
+                    "coverage": coverage,
+                }
+            )
 
-        monthly_data = DailyConsumptions.objects.filter(
-            unit_code=unit_code,
-            chemical_code=chemical_code,
-            date__year=current_year,
-            date__month=current_month,
-        ).order_by("date")
+            monthly_data = DailyConsumptions.objects.filter(
+                unit_code=unit_code,
+                chemical_code=chemical_code,
+                date__year=current_year,
+                date__month=current_month,
+            ).order_by("date")
 
-        dates = list(monthly_data.values_list("date", flat=True))
-        consumptions = list(monthly_data.values_list("consumption", flat=True))
+            dates = list(monthly_data.values_list("date", flat=True))
+            consumptions = list(
+                monthly_data.values_list("consumption", flat=True)
+            )
 
-        pair_label = f"{unit_name} - {chemical_name}"
-        graph_data[pair_label] = (dates, consumptions)
+            if unit_name not in unit_graph_data:
+                unit_graph_data[unit_name] = {}
 
-    fig, ax = plt.subplots(figsize=(12, 6))
-    colors = plt.cm.tab10.colors
-    for i, (label, (dates, consumptions)) in enumerate(graph_data.items()):
-        ax.plot(
-            dates, consumptions, label=label, color=colors[i % len(colors)]
-        )
+            unit_graph_data[unit_name][chemical_name] = (dates, consumptions)
 
-    ax.set_title("Monthly Data Consumption Chart", fontsize=16)
-    ax.set_xlabel("Date", fontsize=12)
-    ax.set_ylabel("Consumption", fontsize=12)
-    ax.legend(fontsize=10)
-    plt.xticks(rotation=90)
-    plt.tight_layout()
+        chart_list = []
 
-    buffer = BytesIO()
-    plt.savefig(buffer, format="png")
-    buffer.seek(0)
-    plt.close(fig)
+        for unit_name, chemicals_data in unit_graph_data.items():
+            fig, ax = plt.subplots(figsize=(12, 6))
+            colors = plt.cm.tab10.colors
 
-    image_data = base64.b64encode(buffer.getvalue()).decode("utf-8")
-    context["analytics"] = analytics_data
-    context["chart"] = image_data
+            for i, (chemical_name, (dates, consumptions)) in enumerate(
+                chemicals_data.items()
+            ):
+                ax.plot(
+                    dates,
+                    consumptions,
+                    label=chemical_name,
+                    color=colors[i % len(colors)],
+                    alpha=0.7,
+                )
+
+            ax.set_title(f"{unit_name} Consumption Pattern", fontsize=16)
+            ax.set_xlabel("Date", fontsize=12)
+            ax.set_ylabel("Consumption", fontsize=12)
+            ax.legend(fontsize=10)
+            plt.xticks(rotation=90)
+            plt.tight_layout()
+
+            buffer = BytesIO()
+            plt.savefig(buffer, format="png")
+            buffer.seek(0)
+            plt.close(fig)
+
+            chart_list.append(
+                {
+                    "chart": base64.b64encode(buffer.getvalue()).decode(
+                        "utf-8"
+                    ),
+                }
+            )
+
+        context["analytics_data"] = analytics_data
+        context["charts"] = chart_list
+        cache_data = {"analytics_data": analytics_data, "charts": chart_list}
+        cache.set("analytics_data", cache_data)
+        cache.touch("analytics_data", 60 * 15)
+    else:
+        cache_data = cache.get("analytics_data")
+        context["analytics_data"] = cache_data["analytics_data"]
+        context["charts"] = cache_data["charts"]
 
     return render(request, "analytics.html", context)
 
@@ -511,6 +548,7 @@ def settings(request):
                 request, "Cleared all data in DailyConsumptions Database."
             )
             DailyConsumptions.objects.all().delete()
+            cache.delete("analytics_data")
             return render(request, "settings_page.html")
         elif "download_consumption_data" in request.POST:
             response = HttpResponse(content_type="text/csv")
@@ -563,6 +601,8 @@ def settings(request):
                 filetypes=(("CSV files", "*.csv"),),
             )
 
+            root.destroy()
+
             DailyConsumptions.objects.all().delete()
 
             try:
@@ -607,8 +647,10 @@ def settings(request):
                     f"We got an error: {e}",
                 )
                 DailyConsumptions.objects.all().delete()
+                cache.delete("analytics_data")
                 return render(request, "settings_page.html")
 
+            cache.delete("analytics_data")
             messages.success(request, "CSV file successfully imported.")
             return render(request, "settings_page.html")
 
@@ -660,6 +702,8 @@ def settings(request):
                 filetypes=(("CSV files", "*.csv"),),
             )
 
+            root.destroy()
+
             ChemicalMaster.objects.all().delete()
 
             try:
@@ -689,6 +733,7 @@ def settings(request):
                 ChemicalMaster.objects.all().delete()
                 return render(request, "settings_page.html")
 
+            cache.delete("analytics_data")
             messages.success(request, "CSV file successfully imported.")
 
     return render(request, "settings_page.html")

@@ -155,7 +155,7 @@ chemical_dropdown.addEventListener("change", function () {
           }
         }
       } else {
-        entry_form.style.width = "58%";
+        entry_form.style.width = "calc(100% - 340px)";
         entry_form.style.left = "270px";
         table_container.setAttribute("hidden", "");
       }
@@ -171,7 +171,7 @@ chemical_dropdown.addEventListener("change", function () {
 });
 
 document.getElementById("clear").addEventListener("click", function () {
-  entry_form.style.width = "58%";
+  entry_form.style.width = "calc(100% - 340px)";
   entry_form.style.left = "270px";
   table_container.setAttribute("hidden", "");
   return;

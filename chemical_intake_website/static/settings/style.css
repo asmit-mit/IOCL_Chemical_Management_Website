@@ -2,7 +2,7 @@
   position: relative;
   top: 10px;
   left: 250px;
-  width: 75%;
+  width: calc(100% - 340px);
   padding: 10px 10px 30px 10px;
   background-color: white;
   border: 2px solid black;

@@ -19,7 +19,7 @@
           <th>Total Stock</th>
           <th>Coverage</th>
         </tr>
-        {% for item in analytics %}
+        {% for item in analytics_data %}
           <tr>
             <td>{{ item.chemical_name }} ({{ item.unit_name }})</td>
             <td>{{ item.avg_consumption }}</td>
@@ -32,9 +32,11 @@
       </table>
     </div>
     <p class="separator"></p>
-    <img src="data:image/png;base64,{{ chart }}"
-         alt="STATISTICS_IMG"
-         class="statistics-img">
+    {% for item in charts %}
+      <img src="data:image/png;base64,{{ item.chart }}"
+           alt="STATISTICS_IMG"
+           class="statistics-img">
+    {% endfor %}
   </div>
   <script src="{% static 'analytics/scripts.js' %}"></script>
 {% endblock %}
