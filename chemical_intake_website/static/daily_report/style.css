@@ -34,6 +34,7 @@
 }
 
 .query li {
+  width: 2px; /* to fix the glitch where the size of the first li increases for no reason */
   display: flex;
   flex-direction: column;
   flex: 1;
