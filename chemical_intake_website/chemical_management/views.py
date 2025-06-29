@@ -48,7 +48,7 @@ def handle_user_submission(request, required_fields):
     return True, "All inputs received."
 
 
-def handle_consumption_data_import():
+def get_file_form_filemanager():
     root = tk.Tk()
     root.withdraw()
 
@@ -58,6 +58,12 @@ def handle_consumption_data_import():
     )
 
     root.destroy()
+
+    return file_path
+
+
+def handle_consumption_data_import():
+    file_path = get_file_form_filemanager()
 
     DailyConsumptions.objects.all().delete()
 
@@ -106,15 +112,7 @@ def handle_consumption_data_import():
 
 
 def handle_chemical_data_import():
-    root = tk.Tk()
-    root.withdraw()
-
-    file_path = filedialog.askopenfilename(
-        title="Select a File",
-        filetypes=(("CSV files", "*.csv"),),
-    )
-
-    root.destroy()
+    file_path = get_file_form_filemanager()
 
     ChemicalMaster.objects.all().delete()
 
@@ -163,13 +161,10 @@ def handle_data_download(columns, value_list, model, download_file_name):
     return response
 
 
-def invalidate_cache():
-    cache.delete("analytics_data")
+def get_and_cache_dropdown_data():
+    if cache.get("dropdown_json") is not None:
+        return cache.get("dropdown_json")
 
-
-# Create your views here.
-@custom_login_required
-def entryform(request):
     data_dict = {}
     dropdown_data = ChemicalMaster.objects.all()
 
@@ -228,7 +223,21 @@ def entryform(request):
 
     data_json = json.dumps(data_dict)
 
-    context = {"data_json": data_json}
+    cache.set("dropdown_json", data_json)
+    cache.touch("dropdown_json", 60 * 30)
+
+    return data_json
+
+
+def invalidate_cache():
+    cache.delete("analytics_data")
+    cache.delete("dropdown_json")
+
+
+# Create your views here.
+@custom_login_required
+def entryform(request):
+    context = {"data_json": get_and_cache_dropdown_data()}
 
     requied_inputs = [
         "date",
@@ -308,27 +317,7 @@ def daily_report(request):
         "table": [],
     }
 
-    data_dict = {}
-    dropdown_data = ChemicalMaster.objects.all()
-
-    for item in dropdown_data:
-        if item.unit_code not in data_dict:
-            data_dict[item.unit_code] = {
-                "unit_name": item.unit_name,
-                "chemicals": [
-                    {
-                        item.chemical_code: item.chemical_name,
-                    }
-                ],
-            }
-        else:
-            data_dict[item.unit_code]["chemicals"].append(
-                {item.chemical_code: item.chemical_name}
-            )
-
-    data_json = json.dumps(data_dict)
-
-    context["data_json"] = data_json
+    context["data_json"] = get_and_cache_dropdown_data()
 
     required_inputs = ["start_date", "end_date", "unit", "chemical"]
 
@@ -387,27 +376,7 @@ def monthly_report(request):
         "show_table": False,
     }
 
-    data_dict = {}
-    dropdown_data = ChemicalMaster.objects.all()
-
-    for item in dropdown_data:
-        if item.unit_code not in data_dict:
-            data_dict[item.unit_code] = {
-                "unit_name": item.unit_name,
-                "chemicals": [
-                    {
-                        item.chemical_code: item.chemical_name,
-                    }
-                ],
-            }
-        else:
-            data_dict[item.unit_code]["chemicals"].append(
-                {item.chemical_code: item.chemical_name}
-            )
-
-    data_json = json.dumps(data_dict)
-
-    context["data_json"] = data_json
+    context["data_json"] = get_and_cache_dropdown_data()
 
     required_inputs = ["select-month", "unit", "chemical"]
 
@@ -424,6 +393,7 @@ def monthly_report(request):
         chemical = request.POST["chemical"]
         month = int(request.POST["select-month"])
 
+        data_dict = json.loads(context["data_json"])
         chemicals_in_record = data_dict[unit]["chemicals"]
 
         current_year = datetime.now().year
@@ -435,26 +405,36 @@ def monthly_report(request):
                     if key == chemical:
                         chemicals_in_record = [{key: value}]
                         break
+        else:
+            new_chemicals_in_record = []
+            for chem_dict in chemicals_in_record:
+                key, value = next(iter(chem_dict.items()))
+                new_chemicals_in_record.append({key: value})
+
+            chemicals_in_record = new_chemicals_in_record
 
         closing_balance_record = []
 
         for record in chemicals_in_record:
-            for chemical_code, chemical_name in record.items():
-                last_record = (
-                    DailyConsumptions.objects.filter(
-                        date__year=current_year,
-                        date__month=month,
-                        unit_code__unit_code=unit,
-                        chemical_code__chemical_code=chemical_code,
-                    )
-                    .order_by("-date")
-                    .first()
-                )
+            chemical_code, chemical_name = next(iter(record.items()))
 
-                if last_record:
-                    closing_balance_record.append(last_record.closing_balance)
-                else:
-                    closing_balance_record.append(0.0)
+            print(chemical_code, chemical_name)
+
+            last_record = (
+                DailyConsumptions.objects.filter(
+                    date__year=current_year,
+                    date__month=month,
+                    unit_code__unit_code=unit,
+                    chemical_code__chemical_code=chemical_code,
+                )
+                .order_by("-date")
+                .first()
+            )
+
+            if last_record:
+                closing_balance_record.append(last_record.closing_balance)
+            else:
+                closing_balance_record.append(0.0)
 
         records_with_dates = []
 
@@ -492,12 +472,9 @@ def monthly_report(request):
                 {"date": current_date_str, "records": day_records}
             )
 
-        context = {
-            "records_with_dates": records_with_dates,
-            "closing_balance_record": closing_balance_record,
-        }
+        context["records_with_dates"] = records_with_dates
+        context["closing_balance_record"] = closing_balance_record
         context["show_table"] = True
-        context["data_json"] = data_json
 
     return render(request, "monthly_report.html", context)
 
@@ -626,7 +603,7 @@ def analytics(request):
         context["charts"] = chart_list
         cache_data = {"analytics_data": analytics_data, "charts": chart_list}
         cache.set("analytics_data", cache_data)
-        cache.touch("analytics_data", 60 * 15)
+        cache.touch("analytics_data", 60 * 30)
     else:
         cache_data = cache.get("analytics_data")
         context["analytics_data"] = cache_data["analytics_data"]
