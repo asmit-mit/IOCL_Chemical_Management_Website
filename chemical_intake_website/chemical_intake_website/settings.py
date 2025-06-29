@@ -138,3 +138,5 @@ CACHES = {
         "LOCATION": "/var/tmp/django_cache",
     }
 }
+
+LOGIN_URL = ""

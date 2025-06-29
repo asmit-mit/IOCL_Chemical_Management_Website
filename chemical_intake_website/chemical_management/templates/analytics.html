@@ -20,7 +20,7 @@
           <th>Coverage</th>
         </tr>
         {% for item in analytics_data %}
-          <tr>
+          <tr id="{{ item.id }}">
             <td>{{ item.chemical_name }} ({{ item.unit_name }})</td>
             <td>{{ item.avg_consumption }}</td>
             <td>{{ item.latest_closing_balance }}</td>

@@ -5,6 +5,7 @@ import json
 import random
 import tkinter as tk
 from datetime import date, datetime
+from functools import wraps
 from io import BytesIO
 from tkinter import filedialog
 
@@ -22,14 +23,153 @@ from .models import ChemicalMaster, DailyConsumptions
 matplotlib.use("Agg")
 
 
-# Create your views here.
-def entryform(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
+# util functions
+def custom_login_required(view_func):
+    @wraps(view_func)
+    def _wrapped_view(request, *args, **kwargs):
+        if not request.user.is_authenticated:
+            return redirect("user_login")
+        return view_func(request, *args, **kwargs)
 
+    return _wrapped_view
+
+
+def handle_user_submission(request, required_fields):
+    missing_fields = [
+        field
+        for field in required_fields
+        if not request.POST.get(field, "").strip()
+    ]
+    if missing_fields:
+        return (
+            False,
+            f"Please fill all the required inputs: {', '.join(missing_fields)}",
+        )
+    return True, "All inputs received."
+
+
+def handle_consumption_data_import():
+    root = tk.Tk()
+    root.withdraw()
+
+    file_path = filedialog.askopenfilename(
+        title="Select a File",
+        filetypes=(("CSV files", "*.csv"),),
+    )
+
+    root.destroy()
+
+    DailyConsumptions.objects.all().delete()
+
+    try:
+        with open(file_path) as f:
+            reader = csv.reader(f)
+            next(reader)
+            for row in reader:
+
+                try:
+                    chemical_instance = get_object_or_404(
+                        ChemicalMaster,
+                        unit_code=row[1],
+                        chemical_code=row[3],
+                    )
+                except Exception as e:
+                    return (
+                        False,
+                        f"We got an error: {e}",
+                    )
+
+                entry = DailyConsumptions.objects.create(
+                    date=row[0],
+                    unit_code=chemical_instance,
+                    chemical_code=chemical_instance,
+                    opening_balance=row[5],
+                    reciept=row[6],
+                    consumption=row[7],
+                    closing_balance=row[8],
+                    sap=row[9],
+                    remarks=row[10],
+                )
+
+                entry.save()
+
+    except Exception as e:
+        invalidate_cache()
+        DailyConsumptions.objects.all().delete()
+        return (
+            False,
+            f"We got an error: {e}",
+        )
+
+    invalidate_cache()
+    return True, "CSV file successfully imported."
+
+
+def handle_chemical_data_import():
+    root = tk.Tk()
+    root.withdraw()
+
+    file_path = filedialog.askopenfilename(
+        title="Select a File",
+        filetypes=(("CSV files", "*.csv"),),
+    )
+
+    root.destroy()
+
+    ChemicalMaster.objects.all().delete()
+
+    try:
+        with open(file_path) as f:
+            reader = csv.reader(f)
+
+            next(reader)
+            for row in reader:
+
+                entry = ChemicalMaster.objects.create(
+                    unit_code=row[0],
+                    unit_name=row[1],
+                    chemical_code=row[2],
+                    chemical_name=row[3],
+                    unit=row[4],
+                )
+
+                entry.save()
+
+    except Exception as e:
+        ChemicalMaster.objects.all().delete()
+        return (
+            False,
+            f"We got an error: {e}",
+        )
+
+    invalidate_cache()
+    return True, "CSV file successfully imported."
+
+
+def handle_data_download(columns, value_list, model, download_file_name):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = (
+        f'attachment; filename="{download_file_name}.csv"'
+    )
+
+    writer = csv.writer(response)
+    writer.writerow(columns)
+
+    records = model.objects.all().values_list(*value_list)
+
+    for rec in records:
+        writer.writerow(rec)
+
+    return response
+
+
+def invalidate_cache():
+    cache.delete("analytics_data")
+
+
+# Create your views here.
+@custom_login_required
+def entryform(request):
     data_dict = {}
     dropdown_data = ChemicalMaster.objects.all()
 
@@ -90,92 +230,78 @@ def entryform(request):
 
     context = {"data_json": data_json}
 
+    requied_inputs = [
+        "date",
+        "unit",
+        "chemical",
+        "receive_qty",
+        "consumption_qty",
+        "sap_balance",
+    ]
+
     if request.POST:
-        try:
-            if (
-                request.POST["date"] == ""
-                or request.POST["unit"] == ""
-                or request.POST["chemical"] == ""
-                or request.POST["receive_qty"] == ""
-                or request.POST["consumption_qty"] == ""
-                or request.POST["sap_balance"] == ""
-            ):
-                messages.success(
-                    request, "Please enter all the required inputs."
-                )
-            else:
-                date = request.POST["date"]
-                unit_code = request.POST["unit"]
-                chemical_code = request.POST["chemical"]
-                opening_balance = request.POST["opening_balance"]
-                reciept = request.POST["receive_qty"]
-                consumption = request.POST["consumption_qty"]
-                closing_balance = request.POST["closing_balance"]
-                sap = request.POST["sap_balance"]
-                remarks = request.POST["remarks"]
+        success, message = handle_user_submission(request, requied_inputs)
 
-                if remarks == "":
-                    remarks = "No Remarks"
+        if not success:
+            messages.success(request, message)
+            return render(request, "chemical_intake_form.html", context)
 
-                chemical_instance = get_object_or_404(
-                    ChemicalMaster,
-                    unit_code=unit_code,
-                    chemical_code=chemical_code,
-                )
+        date = request.POST["date"]
+        opening_balance = request.POST["opening_balance"]
+        reciept = request.POST["receive_qty"]
+        consumption = request.POST["consumption_qty"]
+        closing_balance = request.POST["closing_balance"]
+        sap = request.POST["sap_balance"]
+        remarks = request.POST["remarks"]
 
-                queryset = DailyConsumptions.objects.filter(
-                    date=date,
-                    unit_code=chemical_instance,
-                    chemical_code=chemical_instance,
-                )
+        if remarks == "":
+            remarks = "No Remarks"
 
-                if queryset.exists():
-                    messages.success(
-                        request,
-                        "Entry for the entered date, unit and chemical already exists.",
-                    )
-                else:
-                    entry = DailyConsumptions.objects.create(
-                        unit_code=chemical_instance,
-                        chemical_code=chemical_instance,
-                        date=date,
-                        opening_balance=opening_balance,
-                        reciept=reciept,
-                        consumption=consumption,
-                        closing_balance=closing_balance,
-                        sap=sap,
-                        remarks=remarks,
-                    )
+        chemical_instance = get_object_or_404(
+            ChemicalMaster,
+            unit_code=request.POST.get("unit"),
+            chemical_code=request.POST.get("chemical"),
+        )
 
-                    entry.save()
+        queryset = DailyConsumptions.objects.filter(
+            date=date,
+            unit_code=chemical_instance,
+            chemical_code=chemical_instance,
+        )
 
-                    cache.delete("analytics_data")
-                    messages.success(request, "Entry has been added.")
+        if queryset.exists():
+            messages.success(
+                request,
+                "Entry for the entered date, unit and chemical already exists.",
+            )
+        else:
+            entry = DailyConsumptions.objects.create(
+                unit_code=chemical_instance,
+                chemical_code=chemical_instance,
+                date=date,
+                opening_balance=opening_balance,
+                reciept=reciept,
+                consumption=consumption,
+                closing_balance=closing_balance,
+                sap=sap,
+                remarks=remarks,
+            )
 
-        except KeyError as e:
-            messages.error(request, f"Missing input: {str(e)}")
-        except Exception as e:
-            messages.error(request, f"An error occurred: {str(e)}")
+            entry.save()
+
+            invalidate_cache()
+            messages.success(request, "Entry has been added.")
 
     return render(request, "chemical_intake_form.html", context)
 
 
+@custom_login_required
 def report(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
-
     return render(request, "report_page.html")
 
 
+@custom_login_required
 def daily_report(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
 
     context = {
         "show_table": False,
@@ -204,70 +330,59 @@ def daily_report(request):
 
     context["data_json"] = data_json
 
+    required_inputs = ["start_date", "end_date", "unit", "chemical"]
+
     if request.POST:
-        try:
-            if (
-                request.POST.get("start_date", "") == ""
-                or request.POST.get("end_date", "") == ""
-                or request.POST.get("unit", "") == ""
-                or request.POST.get("chemical", "") == ""
-            ) and "success" in request.POST:
-                messages.success(
-                    request, "Please fill all the required inputs."
+        success, message = handle_user_submission(request, required_inputs)
+
+        if not success:
+            messages.success(request, message)
+            context["show_table"] = False
+            return render(request, "daily_report.html", context)
+
+        unit = request.POST["unit"]
+        chemical = request.POST["chemical"]
+        start_date = request.POST["start_date"]
+        end_date = request.POST["end_date"]
+
+        if chemical == "all":
+            queryset = DailyConsumptions.objects.filter(
+                date__range=[start_date, end_date],
+                unit_code__unit_code=unit,
+            )
+        else:
+            queryset = DailyConsumptions.objects.filter(
+                date__range=[start_date, end_date],
+                unit_code__unit_code=unit,
+                chemical_code__chemical_code=chemical,
+            )
+
+        if queryset.exists():
+            for data in queryset:
+                context["table"].append(
+                    {
+                        "date": data.date,
+                        "chemical": data.chemical_code.chemical_name,
+                        "reciept": data.reciept,
+                        "consumption": data.consumption,
+                        "closing_balance": data.closing_balance,
+                        "sap": data.sap,
+                        "remarks": data.remarks,
+                    }
                 )
-                context["show_table"] = False
-            else:
-                unit = request.POST["unit"]
-                chemical = request.POST["chemical"]
-                start_date = request.POST["start_date"]
-                end_date = request.POST["end_date"]
-
-                if chemical == "all":
-                    queryset = DailyConsumptions.objects.filter(
-                        date__range=[start_date, end_date],
-                        unit_code__unit_code=unit,
-                    )
-                else:
-                    queryset = DailyConsumptions.objects.filter(
-                        date__range=[start_date, end_date],
-                        unit_code__unit_code=unit,
-                        chemical_code__chemical_code=chemical,
-                    )
-
-                if queryset.exists():
-                    for data in queryset:
-                        context["table"].append(
-                            {
-                                "date": data.date,
-                                "chemical": data.chemical_code.chemical_name,
-                                "reciept": data.reciept,
-                                "consumption": data.consumption,
-                                "closing_balance": data.closing_balance,
-                                "sap": data.sap,
-                                "remarks": data.remarks,
-                            }
-                        )
-                    context["show_table"] = True
-                else:
-                    messages.success(
-                        request,
-                        "No entry in the database for the entered inputs.",
-                    )
-                    context["show_table"] = False
-        except Exception:
-            messages.success(request, "Please fill all the required inputs.")
+            context["show_table"] = True
+        else:
+            messages.success(
+                request,
+                "No entry in the database for the entered inputs.",
+            )
             context["show_table"] = False
 
     return render(request, "daily_report.html", context)
 
 
+@custom_login_required
 def monthly_report(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
-
     context = {
         "show_table": False,
     }
@@ -294,115 +409,101 @@ def monthly_report(request):
 
     context["data_json"] = data_json
 
+    required_inputs = ["select-month", "unit", "chemical"]
+
     if request.POST:
-        try:
-            if (
-                request.POST.get("select-month", "") == ""
-                or request.POST.get("unit", "") == ""
-                or request.POST.get("chemical", "") == ""
-            ) and "success" in request.POST:
-                messages.success(
-                    request, "Please fill all the required inputs."
+        success, message = handle_user_submission(request, required_inputs)
+
+        if not success:
+            messages.success(request, message)
+            context["show_table"] = False
+
+            return render(request, "monthly_report.html", context)
+
+        unit = request.POST["unit"]
+        chemical = request.POST["chemical"]
+        month = int(request.POST["select-month"])
+
+        chemicals_in_record = data_dict[unit]["chemicals"]
+
+        current_year = datetime.now().year
+        _, total_days = calendar.monthrange(current_year, month)
+
+        if chemical != "all":
+            for chem_dict in chemicals_in_record:
+                for key, value in chem_dict.items():
+                    if key == chemical:
+                        chemicals_in_record = [{key: value}]
+                        break
+
+        closing_balance_record = []
+
+        for record in chemicals_in_record:
+            for chemical_code, chemical_name in record.items():
+                last_record = (
+                    DailyConsumptions.objects.filter(
+                        date__year=current_year,
+                        date__month=month,
+                        unit_code__unit_code=unit,
+                        chemical_code__chemical_code=chemical_code,
+                    )
+                    .order_by("-date")
+                    .first()
                 )
-                context["show_table"] = False
 
-                return render(request, "monthly_report.html", context)
+                if last_record:
+                    closing_balance_record.append(last_record.closing_balance)
+                else:
+                    closing_balance_record.append(0.0)
 
-            unit = request.POST["unit"]
-            chemical = request.POST["chemical"]
-            month = int(request.POST["select-month"])
+        records_with_dates = []
 
-            chemicals_in_record = data_dict[unit]["chemicals"]
-
-            current_year = datetime.now().year
-            _, total_days = calendar.monthrange(current_year, month)
-
-            if chemical != "all":
-                for chem_dict in chemicals_in_record:
-                    for key, value in chem_dict.items():
-                        if key == chemical:
-                            chemicals_in_record = [{key: value}]
-                            break
-
-            closing_balance_record = []
+        for day in range(1, total_days + 1):
+            current_date = date(current_year, month, day)
+            current_date_str = current_date.strftime("%Y-%m-%d")
+            day_records = []
 
             for record in chemicals_in_record:
                 for chemical_code, chemical_name in record.items():
-                    last_record = (
-                        DailyConsumptions.objects.filter(
-                            date__year=current_year,
-                            date__month=month,
-                            unit_code__unit_code=unit,
-                            chemical_code__chemical_code=chemical_code,
-                        )
-                        .order_by("-date")
-                        .first()
-                    )
+                    daily_consumption = DailyConsumptions.objects.filter(
+                        date=current_date,
+                        unit_code__unit_code=unit,
+                        chemical_code__chemical_code=chemical_code,
+                    ).first()
 
-                    if last_record:
-                        closing_balance_record.append(
-                            last_record.closing_balance
+                    if daily_consumption:
+                        day_records.append(
+                            {
+                                "chemical_name": chemical_name,
+                                "reciept": daily_consumption.reciept,
+                                "consumption": daily_consumption.consumption,
+                            }
                         )
                     else:
-                        closing_balance_record.append(0.0)
+                        day_records.append(
+                            {
+                                "chemical_name": chemical_name,
+                                "reciept": 0.0,
+                                "consumption": 0.0,
+                            }
+                        )
 
-            records_with_dates = []
+            records_with_dates.append(
+                {"date": current_date_str, "records": day_records}
+            )
 
-            for day in range(1, total_days + 1):
-                current_date = date(current_year, month, day)
-                current_date_str = current_date.strftime("%Y-%m-%d")
-                day_records = []
-
-                for record in chemicals_in_record:
-                    for chemical_code, chemical_name in record.items():
-                        daily_consumption = DailyConsumptions.objects.filter(
-                            date=current_date,
-                            unit_code__unit_code=unit,
-                            chemical_code__chemical_code=chemical_code,
-                        ).first()
-
-                        if daily_consumption:
-                            day_records.append(
-                                {
-                                    "chemical_name": chemical_name,
-                                    "reciept": daily_consumption.reciept,
-                                    "consumption": daily_consumption.consumption,
-                                }
-                            )
-                        else:
-                            day_records.append(
-                                {
-                                    "chemical_name": chemical_name,
-                                    "reciept": 0.0,
-                                    "consumption": 0.0,
-                                }
-                            )
-
-                records_with_dates.append(
-                    {"date": current_date_str, "records": day_records}
-                )
-
-            context = {
-                "records_with_dates": records_with_dates,
-                "closing_balance_record": closing_balance_record,
-            }
-            context["show_table"] = True
-            context["data_json"] = data_json
-
-        except Exception:
-            messages.success(request, "Please fill all the required inputs.")
-            context["show_table"] = False
+        context = {
+            "records_with_dates": records_with_dates,
+            "closing_balance_record": closing_balance_record,
+        }
+        context["show_table"] = True
+        context["data_json"] = data_json
 
     return render(request, "monthly_report.html", context)
 
 
+@custom_login_required
 def analytics(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
-
     context = {}
     if cache.get("analytics_data") is None:
 
@@ -423,6 +524,7 @@ def analytics(request):
         for pair in pairs:
             unit_code = pair["unit_code"]
             chemical_code = pair["chemical_code"]
+
             unit_name = pair["unit_code__unit_name"]
             chemical_name = pair["chemical_code__chemical_name"]
 
@@ -455,6 +557,7 @@ def analytics(request):
 
             analytics_data.append(
                 {
+                    "id": unit_code + chemical_code,
                     "unit_name": unit_name,
                     "chemical_name": chemical_name,
                     "avg_consumption": avg_consumption,
@@ -532,13 +635,8 @@ def analytics(request):
     return render(request, "analytics.html", context)
 
 
+@custom_login_required
 def settings(request):
-    if not request.user.is_authenticated:
-        messages.success(
-            request, "Your session has expired. Please login again."
-        )
-        return redirect("user_login")
-
     if request.POST:
         if "color" in request.POST:
             color = request.POST.get("color")
@@ -548,32 +646,24 @@ def settings(request):
                 request, "Cleared all data in DailyConsumptions Database."
             )
             DailyConsumptions.objects.all().delete()
-            cache.delete("analytics_data")
+            invalidate_cache()
             return render(request, "settings_page.html")
         elif "download_consumption_data" in request.POST:
-            response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = (
-                'attachment; filename="Daily_Consumption_Data.csv"'
-            )
+            columns = [
+                "Date",
+                "Unit Code",
+                "Unit Name",
+                "Chemical Code",
+                "Chemical Name",
+                "Opening Balance",
+                "Reciept",
+                "Consumption",
+                "Closing Balance",
+                "Sap Stock",
+                "Remarks",
+            ]
 
-            writer = csv.writer(response)
-            writer.writerow(
-                [
-                    "Date",
-                    "Unit Code",
-                    "Unit Name",
-                    "Chemical Code",
-                    "Chemical Name",
-                    "Opening Balance",
-                    "Reciept",
-                    "Consumption",
-                    "Closing Balance",
-                    "Sap Stock",
-                    "Remarks",
-                ]
-            )
-
-            records = DailyConsumptions.objects.all().values_list(
+            value_list = [
                 "date",
                 "unit_code__unit_code",
                 "unit_code__unit_name",
@@ -585,73 +675,15 @@ def settings(request):
                 "closing_balance",
                 "sap",
                 "remarks",
+            ]
+
+            return handle_data_download(
+                columns, value_list, DailyConsumptions, "Consumption_Data"
             )
-
-            for rec in records:
-                writer.writerow(rec)
-
-            return response
 
         elif "import_consumption_csv" in request.POST:
-            root = tk.Tk()
-            root.withdraw()
-
-            file_path = filedialog.askopenfilename(
-                title="Select a File",
-                filetypes=(("CSV files", "*.csv"),),
-            )
-
-            root.destroy()
-
-            DailyConsumptions.objects.all().delete()
-
-            try:
-                with open(file_path) as f:
-                    reader = csv.reader(f)
-                    next(reader)
-                    for row in reader:
-
-                        try:
-                            chemical_instance = get_object_or_404(
-                                ChemicalMaster,
-                                unit_code=row[1],
-                                chemical_code=row[3],
-                            )
-                        except Exception as e:
-                            messages.success(
-                                request,
-                                f"We got an error: {e}",
-                            )
-                            return render(request, "settings_page.html")
-
-                        entry = DailyConsumptions.objects.create(
-                            date=row[0],
-                            unit_code=chemical_instance,
-                            chemical_code=chemical_instance,
-                            opening_balance=row[5],
-                            reciept=row[6],
-                            consumption=row[7],
-                            closing_balance=row[8],
-                            sap=row[9],
-                            remarks=row[10],
-                        )
-
-                        entry.save()
-
-                        if not entry:
-                            break
-
-            except Exception as e:
-                messages.success(
-                    request,
-                    f"We got an error: {e}",
-                )
-                DailyConsumptions.objects.all().delete()
-                cache.delete("analytics_data")
-                return render(request, "settings_page.html")
-
-            cache.delete("analytics_data")
-            messages.success(request, "CSV file successfully imported.")
+            success, message = handle_consumption_data_import()
+            messages.success(request, message)
             return render(request, "settings_page.html")
 
         elif "clear_chemical_data" in request.POST:
@@ -664,77 +696,30 @@ def settings(request):
             return render(request, "settings_page.html")
 
         elif "download_chemical_data" in request.POST:
-            response = HttpResponse(content_type="text/csv")
-            response["Content-Disposition"] = (
-                'attachment; filename="Chemical_Master_Data.csv"'
-            )
+            columns = [
+                "Unit Code",
+                "Unit Name",
+                "Chemical Code",
+                "Chemical Name",
+                "Unit of Measurement",
+            ]
 
-            writer = csv.writer(response)
-            writer.writerow(
-                [
-                    "Unit Code",
-                    "Unit Name",
-                    "Chemical Code",
-                    "Chemical Name",
-                    "Unit of Measurement",
-                ]
-            )
-
-            records = ChemicalMaster.objects.all().values_list(
+            value_list = [
                 "unit_code",
                 "unit_name",
                 "chemical_code",
                 "chemical_name",
                 "unit",
+            ]
+
+            return handle_data_download(
+                columns, value_list, ChemicalMaster, "ChemicalMaster_Database"
             )
-
-            for rec in records:
-                writer.writerow(rec)
-
-            return response
 
         elif "import_chemical_csv" in request.POST:
-            root = tk.Tk()
-            root.withdraw()
-
-            file_path = filedialog.askopenfilename(
-                title="Select a File",
-                filetypes=(("CSV files", "*.csv"),),
-            )
-
-            root.destroy()
-
-            ChemicalMaster.objects.all().delete()
-
-            try:
-                with open(file_path) as f:
-                    reader = csv.reader(f)
-                    next(reader)
-                    for row in reader:
-
-                        entry = ChemicalMaster.objects.create(
-                            unit_code=row[0],
-                            unit_name=row[1],
-                            chemical_code=row[2],
-                            chemical_name=row[3],
-                            unit=row[4],
-                        )
-
-                        entry.save()
-
-                        if not entry:
-                            break
-
-            except Exception as e:
-                messages.success(
-                    request,
-                    f"We got an error: {e}",
-                )
-                ChemicalMaster.objects.all().delete()
-                return render(request, "settings_page.html")
-
-            cache.delete("analytics_data")
-            messages.success(request, "CSV file successfully imported.")
+            success, message = handle_chemical_data_import()
+            messages.success(request, message)
+            return render(request, "settings_page.html")
 
     return render(request, "settings_page.html")
 
