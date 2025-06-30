@@ -4,19 +4,23 @@ import csv
 import json
 import random
 import tkinter as tk
-from datetime import date, datetime
+from datetime import date, datetime, timedelta
 from functools import wraps
 from io import BytesIO
 from tkinter import filedialog
 
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+from dateutil.relativedelta import relativedelta
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.core.cache import cache
-from django.db.models import Avg
+from django.db.models import Avg, Sum
+from django.db.models.functions import TruncMonth
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from sklearn.linear_model import LinearRegression
 
 from .models import ChemicalMaster, DailyConsumptions
 
@@ -230,8 +234,22 @@ def get_and_cache_dropdown_data():
 
 
 def get_analytics(
-    id, unit_code, chemical_code, unit_name, chemical_name, day, month, year
+    id,
+    unit_code,
+    chemical_code,
+    unit_name,
+    chemical_name,
+    day,
+    month,
+    year,
+    n_months,
 ):
+    chemical_instance = get_object_or_404(
+        ChemicalMaster,
+        unit_code=id[0],
+        chemical_code=id[1],
+    )
+
     latest = (
         DailyConsumptions.objects.filter(
             unit_code=unit_code, chemical_code=chemical_code
@@ -257,6 +275,103 @@ def get_analytics(
         else 0
     )
 
+    today = datetime.now()
+    start_date = (today - relativedelta(months=n_months)).replace(day=1)
+    end_date = today.replace(day=1)
+
+    monthly_consumptions = (
+        DailyConsumptions.objects.filter(
+            unit_code=unit_code,
+            chemical_code=chemical_code,
+            date__gte=start_date,
+            date__lt=end_date,
+        )
+        .annotate(month=TruncMonth("date"))
+        .values("month")
+        .annotate(total_consumption=Sum("consumption"))
+        .order_by("month")
+    )
+
+    consumption_data = [
+        (entry["month"], entry["total_consumption"])
+        for entry in monthly_consumptions
+        if entry["total_consumption"] is not None
+    ]
+
+    months = [entry[0] for entry in consumption_data]
+    consumptions = [entry[1] for entry in consumption_data]
+
+    if len(months) > 1:
+        X = np.array(range(len(consumptions))).reshape(-1, 1)
+        y = np.array(consumptions)
+
+        model = LinearRegression()
+        model.fit(X, y)
+
+        future_indices = np.array(
+            range(len(consumptions), len(consumptions) + 4)
+        ).reshape(-1, 1)
+        future_consumptions = model.predict(future_indices).tolist()
+        future_consumptions = [round(val, 2) for val in future_consumptions]
+
+        current_month_start = today.replace(day=1)
+        future_months = [
+            current_month_start + relativedelta(months=i) for i in range(4)
+        ]
+    else:
+        future_consumptions = [0.0, 0.0, 0.0, 0.0]
+        future_months = []
+
+    all_months = months
+
+    all_consumptions = consumptions
+
+    X_all = np.array(range(len(all_consumptions))).reshape(-1, 1)
+
+    model = LinearRegression()
+    model.fit(X_all, all_consumptions)
+
+    y_pred = model.predict(X_all)
+
+    max_value = max(all_consumptions)
+    y_ticks = np.arange(0, max_value + 200, 100)
+
+    fig_pred, ax_pred = plt.subplots(figsize=(12, 6))
+
+    ax_pred.scatter(
+        all_months,
+        all_consumptions,
+        color="red",
+        edgecolor="black",
+        label="Actual & Predicted Data",
+    )
+
+    ax_pred.plot(
+        all_months,
+        y_pred,
+        color="blue",
+        label="Linear Regression Line",
+        alpha=0.8,
+    )
+
+    ax_pred.set_title(
+        f"Predicted Consumption for {chemical_name} ({unit_name})",
+        fontsize=16,
+    )
+    ax_pred.set_xlabel("Months", fontsize=12)
+    ax_pred.set_ylabel("Consumption", fontsize=12)
+    ax_pred.legend(fontsize=10)
+    ax_pred.set_yticks(y_ticks)
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+
+    buffer_pred = BytesIO()
+    plt.savefig(buffer_pred, format="png")
+    buffer_pred.seek(0)
+    plt.close(fig_pred)
+
+    pred_chart = base64.b64encode(buffer_pred.getvalue()).decode("utf-8")
+
     monthly_data = DailyConsumptions.objects.filter(
         unit_code=unit_code,
         chemical_code=chemical_code,
@@ -265,13 +380,15 @@ def get_analytics(
     ).order_by("date")
 
     dates = list(monthly_data.values_list("date", flat=True))
-    consumptions = list(monthly_data.values_list("consumption", flat=True))
+    consumptions_daily = list(
+        monthly_data.values_list("consumption", flat=True)
+    )
 
     fig, ax = plt.subplots(figsize=(12, 6))
 
     ax.plot(
         dates,
-        consumptions,
+        consumptions_daily,
         label=chemical_name,
         alpha=0.7,
     )
@@ -290,11 +407,11 @@ def get_analytics(
     buffer.seek(0)
     plt.close(fig)
 
-    chart = base64.b64encode(buffer.getvalue()).decode("utf-8")
+    analytics_chart = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
     return (
         {
-            "id": id,
+            "id": id[0],
             "unit_name": unit_name,
             "chemical_name": chemical_name,
             "avg_consumption": avg_consumption,
@@ -302,8 +419,11 @@ def get_analytics(
             "latest_sap": latest.sap,
             "total_stock": total_stock,
             "coverage": coverage,
+            "measure_unit": chemical_instance.unit,
+            "predictions": future_consumptions,
         },
-        {"id": id, "chart": chart},
+        {"id": id, "analytics_chart": analytics_chart},
+        {"id": id, "pred_chart": pred_chart},
     )
 
 
@@ -312,6 +432,7 @@ def get_or_cache_analytics():
 
         analytics_data = []
         analytics_chart_list = []
+        pred_chart_list = []
         today = datetime.today()
         current_month = today.month
         current_year = today.year
@@ -321,6 +442,7 @@ def get_or_cache_analytics():
             "unit_code__unit_code",
             "unit_code__unit_name",
             "chemical_code",
+            "chemical_code__chemical_code",
             "chemical_code__chemical_name",
         ).distinct()
 
@@ -330,9 +452,12 @@ def get_or_cache_analytics():
             unit_name = pair["unit_code__unit_name"]
             chemical_name = pair["chemical_code__chemical_name"]
 
-            id = pair["unit_code__unit_code"]
+            id = [
+                pair["unit_code__unit_code"],
+                pair["chemical_code__chemical_code"],
+            ]
 
-            data, chart = get_analytics(
+            data, analytics_chart, pred_chart = get_analytics(
                 id,
                 unit_code,
                 chemical_code,
@@ -341,14 +466,17 @@ def get_or_cache_analytics():
                 today,
                 current_month,
                 current_year,
+                n_months=9,
             )
 
             analytics_data.append(data)
-            analytics_chart_list.append(chart)
+            analytics_chart_list.append(analytics_chart)
+            pred_chart_list.append(pred_chart)
 
         cache_data = {
             "analytics_data": analytics_data,
             "analytics_charts": analytics_chart_list,
+            "pred_charts": pred_chart_list,
         }
 
         cache.set("analytics_data", cache_data)
@@ -357,7 +485,11 @@ def get_or_cache_analytics():
     else:
         cache_data = cache.get("analytics_data")
 
-    return cache_data["analytics_data"], cache_data["charts"]
+    return (
+        cache_data["analytics_data"],
+        cache_data["analytics_charts"],
+        cache_data["pred_charts"],
+    )
 
 
 def invalidate_cache():
@@ -618,9 +750,11 @@ def analytics(request):
         ChemicalMaster.objects.values("unit_code", "unit_name").distinct()
     )
 
-    context["analytics_data"], context["analytics_charts"] = (
-        get_or_cache_analytics()
-    )
+    (
+        context["analytics_data"],
+        context["analytics_charts"],
+        context["pred_charts"],
+    ) = get_or_cache_analytics()
 
     context["units"] = units
 
