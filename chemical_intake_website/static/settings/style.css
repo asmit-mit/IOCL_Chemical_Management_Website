@@ -46,10 +46,11 @@
   padding: 20px 0 0 0;
   display: flex;
   justify-content: space-around;
+  gap: 10px;
 }
 
 .color-section button {
-  width: 180px;
+  flex: 1;
   height: 50px;
   border: none;
   border-radius: 10px;

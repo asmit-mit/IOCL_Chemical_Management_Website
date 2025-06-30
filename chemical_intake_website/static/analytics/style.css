@@ -24,6 +24,32 @@ h1 {
   text-shadow: 1px 2px 1px black;
 }
 
+.view-dropdown-container {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+#view-label,
+#unit-label {
+  font-weight: bold;
+  font-size: 13px;
+  color: indigo;
+  margin-bottom: 5px;
+}
+
+#unit-label {
+  margin-top: 10px;
+}
+
+#view-dropdown,
+#unit-dropdown {
+  background-color: white;
+  border-left: 5px solid red;
+  border-radius: 5px;
+  height: 35.3px;
+}
+
 .scrollable-table-container {
   width: 100%;
   background-color: white;
@@ -31,7 +57,8 @@ h1 {
   box-shadow: 2px 2px 5px black;
 }
 
-#analytics-table {
+#analytics-table,
+#predictions-table {
   width: 100%;
   background-color: black;
   border-radius: 5px;
@@ -43,7 +70,8 @@ h1 {
   background-color: blue;
 }
 
-#analytics-table td {
+#analytics-table td,
+#predictions-table td {
   text-align: center;
   background-color: white;
 }

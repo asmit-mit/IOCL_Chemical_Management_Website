@@ -224,9 +224,140 @@ def get_and_cache_dropdown_data():
     data_json = json.dumps(data_dict)
 
     cache.set("dropdown_json", data_json)
-    cache.touch("dropdown_json", 60 * 30)
+    cache.touch("dropdown_json", 60 * 60 * 2)
 
     return data_json
+
+
+def get_analytics(
+    id, unit_code, chemical_code, unit_name, chemical_name, day, month, year
+):
+    latest = (
+        DailyConsumptions.objects.filter(
+            unit_code=unit_code, chemical_code=chemical_code
+        )
+        .order_by("-date")
+        .first()
+    )
+
+    last_7_entries = DailyConsumptions.objects.filter(
+        unit_code=unit_code,
+        chemical_code=chemical_code,
+        consumption__gt=0,
+    ).order_by("-date")[:7]
+
+    avg_consumption = round(
+        last_7_entries.aggregate(Avg("consumption"))["consumption__avg"],
+        2,
+    )
+    total_stock = round(latest.closing_balance + latest.sap, 2)
+    coverage = (
+        round(total_stock / (avg_consumption * 31), 2)
+        if avg_consumption
+        else 0
+    )
+
+    monthly_data = DailyConsumptions.objects.filter(
+        unit_code=unit_code,
+        chemical_code=chemical_code,
+        date__year=year,
+        date__month=month,
+    ).order_by("date")
+
+    dates = list(monthly_data.values_list("date", flat=True))
+    consumptions = list(monthly_data.values_list("consumption", flat=True))
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+
+    ax.plot(
+        dates,
+        consumptions,
+        label=chemical_name,
+        alpha=0.7,
+    )
+
+    ax.set_title(
+        f"{chemical_name}({unit_name}) Consumption Pattern", fontsize=16
+    )
+    ax.set_xlabel("Date", fontsize=12)
+    ax.set_ylabel("Consumption", fontsize=12)
+    ax.legend(fontsize=10)
+    plt.xticks(rotation=90)
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format="png")
+    buffer.seek(0)
+    plt.close(fig)
+
+    chart = base64.b64encode(buffer.getvalue()).decode("utf-8")
+
+    return (
+        {
+            "id": id,
+            "unit_name": unit_name,
+            "chemical_name": chemical_name,
+            "avg_consumption": avg_consumption,
+            "latest_closing_balance": latest.closing_balance,
+            "latest_sap": latest.sap,
+            "total_stock": total_stock,
+            "coverage": coverage,
+        },
+        {"id": id, "chart": chart},
+    )
+
+
+def get_or_cache_analytics():
+    if cache.get("analytics_data") is None:
+
+        analytics_data = []
+        analytics_chart_list = []
+        today = datetime.today()
+        current_month = today.month
+        current_year = today.year
+
+        pairs = DailyConsumptions.objects.values(
+            "unit_code",
+            "unit_code__unit_code",
+            "unit_code__unit_name",
+            "chemical_code",
+            "chemical_code__chemical_name",
+        ).distinct()
+
+        for pair in pairs:
+            unit_code = pair["unit_code"]
+            chemical_code = pair["chemical_code"]
+            unit_name = pair["unit_code__unit_name"]
+            chemical_name = pair["chemical_code__chemical_name"]
+
+            id = pair["unit_code__unit_code"]
+
+            data, chart = get_analytics(
+                id,
+                unit_code,
+                chemical_code,
+                unit_name,
+                chemical_name,
+                today,
+                current_month,
+                current_year,
+            )
+
+            analytics_data.append(data)
+            analytics_chart_list.append(chart)
+
+        cache_data = {
+            "analytics_data": analytics_data,
+            "analytics_charts": analytics_chart_list,
+        }
+
+        cache.set("analytics_data", cache_data)
+        cache.touch("analytics_data", 60 * 60 * 2)
+
+    else:
+        cache_data = cache.get("analytics_data")
+
+    return cache_data["analytics_data"], cache_data["charts"]
 
 
 def invalidate_cache():
@@ -482,132 +613,16 @@ def monthly_report(request):
 @custom_login_required
 def analytics(request):
     context = {}
-    if cache.get("analytics_data") is None:
 
-        analytics_data = []
-        pairs = DailyConsumptions.objects.values(
-            "unit_code",
-            "unit_code__unit_name",
-            "chemical_code",
-            "chemical_code__chemical_name",
-        ).distinct()
+    units = list(
+        ChemicalMaster.objects.values("unit_code", "unit_name").distinct()
+    )
 
-        today = datetime.today()
-        current_month = today.month
-        current_year = today.year
+    context["analytics_data"], context["analytics_charts"] = (
+        get_or_cache_analytics()
+    )
 
-        unit_graph_data = {}
-
-        for pair in pairs:
-            unit_code = pair["unit_code"]
-            chemical_code = pair["chemical_code"]
-
-            unit_name = pair["unit_code__unit_name"]
-            chemical_name = pair["chemical_code__chemical_name"]
-
-            latest = (
-                DailyConsumptions.objects.filter(
-                    unit_code=unit_code, chemical_code=chemical_code
-                )
-                .order_by("-date")
-                .first()
-            )
-
-            last_7_entries = DailyConsumptions.objects.filter(
-                unit_code=unit_code,
-                chemical_code=chemical_code,
-                consumption__gt=0,
-            ).order_by("-date")[:7]
-
-            avg_consumption = round(
-                last_7_entries.aggregate(Avg("consumption"))[
-                    "consumption__avg"
-                ],
-                2,
-            )
-            total_stock = round(latest.closing_balance + latest.sap, 2)
-            coverage = (
-                round(total_stock / (avg_consumption * 31), 2)
-                if avg_consumption
-                else 0
-            )
-
-            analytics_data.append(
-                {
-                    "id": unit_code + chemical_code,
-                    "unit_name": unit_name,
-                    "chemical_name": chemical_name,
-                    "avg_consumption": avg_consumption,
-                    "latest_closing_balance": latest.closing_balance,
-                    "latest_sap": latest.sap,
-                    "total_stock": total_stock,
-                    "coverage": coverage,
-                }
-            )
-
-            monthly_data = DailyConsumptions.objects.filter(
-                unit_code=unit_code,
-                chemical_code=chemical_code,
-                date__year=current_year,
-                date__month=current_month,
-            ).order_by("date")
-
-            dates = list(monthly_data.values_list("date", flat=True))
-            consumptions = list(
-                monthly_data.values_list("consumption", flat=True)
-            )
-
-            if unit_name not in unit_graph_data:
-                unit_graph_data[unit_name] = {}
-
-            unit_graph_data[unit_name][chemical_name] = (dates, consumptions)
-
-        chart_list = []
-
-        for unit_name, chemicals_data in unit_graph_data.items():
-            fig, ax = plt.subplots(figsize=(12, 6))
-            colors = plt.cm.tab10.colors
-
-            for i, (chemical_name, (dates, consumptions)) in enumerate(
-                chemicals_data.items()
-            ):
-                ax.plot(
-                    dates,
-                    consumptions,
-                    label=chemical_name,
-                    color=colors[i % len(colors)],
-                    alpha=0.7,
-                )
-
-            ax.set_title(f"{unit_name} Consumption Pattern", fontsize=16)
-            ax.set_xlabel("Date", fontsize=12)
-            ax.set_ylabel("Consumption", fontsize=12)
-            ax.legend(fontsize=10)
-            plt.xticks(rotation=90)
-            plt.tight_layout()
-
-            buffer = BytesIO()
-            plt.savefig(buffer, format="png")
-            buffer.seek(0)
-            plt.close(fig)
-
-            chart_list.append(
-                {
-                    "chart": base64.b64encode(buffer.getvalue()).decode(
-                        "utf-8"
-                    ),
-                }
-            )
-
-        context["analytics_data"] = analytics_data
-        context["charts"] = chart_list
-        cache_data = {"analytics_data": analytics_data, "charts": chart_list}
-        cache.set("analytics_data", cache_data)
-        cache.touch("analytics_data", 60 * 30)
-    else:
-        cache_data = cache.get("analytics_data")
-        context["analytics_data"] = cache_data["analytics_data"]
-        context["charts"] = cache_data["charts"]
+    context["units"] = units
 
     return render(request, "analytics.html", context)
 

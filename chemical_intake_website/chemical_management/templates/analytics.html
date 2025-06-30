@@ -8,7 +8,20 @@
 {% block title %}Analytics Page{% endblock %}
 {% block main %}
   <div class="content">
-    <h1>Chemical Consumption Pattern and Analytics</h1>
+    <h1>Chemical Consumption Pattern Analysis And Predictions</h1>
+    <div class="view-dropdown-container">
+      <label for="view-dropdown" id="view-label">What do you want to see?</label>
+      <select name="view-dropdown" id='view-dropdown'>
+        <option value="analytics">Analytics</option>
+        <option value="predictions">Predictions</option>
+      </select>
+      <label for="unit-label" id="unit-label">Select Unit:</label>
+      <select name="unit-label" id='unit-dropdown'>
+        <option value="" selected disabled>Select Unit</option>
+        {% for unit in units %}<option value="{{ unit.unit_code }}">{{ unit.unit_name }}</option>{% endfor %}
+      </select>
+    </div>
+    <p class="separator"></p>
     <div class="scrollable-table-container">
       <table id="analytics-table">
         <tr class="header-row">
@@ -20,7 +33,7 @@
           <th>Coverage</th>
         </tr>
         {% for item in analytics_data %}
-          <tr id="{{ item.id }}">
+          <tr id="{{ item.id }}" class="analytics-table-row">
             <td>{{ item.chemical_name }} ({{ item.unit_name }})</td>
             <td>{{ item.avg_consumption }}</td>
             <td>{{ item.latest_closing_balance }}</td>
@@ -30,12 +43,33 @@
           </tr>
         {% endfor %}
       </table>
+      <table id="predictions-table" hidden>
+        <tr class="header-row">
+          <th>Chemicals</th>
+          <th>Month 1</th>
+          <th>Month 2</th>
+          <th>Month 3</th>
+        </tr>
+        <tr>
+          <td>test</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+        </tr>
+        <tr>
+          <td>test</td>
+          <td>0</td>
+          <td>0</td>
+          <td>0</td>
+        </tr>
+      </table>
     </div>
     <p class="separator"></p>
-    {% for item in charts %}
+    {% for item in analytics_charts %}
       <img src="data:image/png;base64,{{ item.chart }}"
            alt="STATISTICS_IMG"
-           class="statistics-img">
+           class="statistics-img"
+           id="{{ item.id }}">
     {% endfor %}
   </div>
   <script src="{% static 'analytics/scripts.js' %}"></script>
