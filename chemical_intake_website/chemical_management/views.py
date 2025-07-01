@@ -32,6 +32,9 @@ def custom_login_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
+            messages.success(
+                request, "Your session has expired. Please login again."
+            )
             return redirect("user_login")
         return view_func(request, *args, **kwargs)
 
