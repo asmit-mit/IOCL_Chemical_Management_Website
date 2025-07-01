@@ -213,7 +213,8 @@
   border-left: 1.5px solid black;
 }
 
-.last-row {
+.last-row,
+.second-last-row {
   height: 30px;
 }
 
@@ -223,6 +224,31 @@
   font-weight: bold;
 }
 
-.last-row td {
+.second-last-row-header {
+  background-color: palegoldenrod !important;
+  color: black !important;
+  font-weight: bold;
+}
+
+.last-row td,
+.second-last-row td {
   color: black;
+}
+
+.second-last-row .first-column {
+  background-color: palegoldenrod;
+  color: black;
+}
+
+.second-last-row .inner-table {
+  background-color: white;
+}
+
+.second-last-row .inner-table tr {
+  display: flex;
+}
+
+.second-last-row .inner-table td {
+  background-color: white;
+  flex: 1;
 }

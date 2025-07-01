@@ -695,8 +695,6 @@ def monthly_report(request):
 
         unit_context = ChemicalMaster.objects.filter(unit_code=unit)
 
-        print(chemical)
-
         if chemical != "all":
             chemical_context = ChemicalMaster.objects.filter(
                 unit_code=unit, chemical_code=chemical
@@ -753,6 +751,8 @@ def monthly_report(request):
 
         records_with_dates = []
 
+        total_summary_dict = {}
+
         for day in range(1, total_days + 1):
             current_date = date(current_year, month, day)
             current_date_str = current_date.strftime("%Y-%m-%d")
@@ -767,27 +767,45 @@ def monthly_report(request):
                     ).first()
 
                     if daily_consumption:
-                        day_records.append(
-                            {
-                                "chemical_name": chemical_name,
-                                "reciept": daily_consumption.reciept,
-                                "consumption": daily_consumption.consumption,
-                            }
-                        )
+                        d_rec = {
+                            "chemical_name": chemical_name,
+                            "reciept": daily_consumption.reciept,
+                            "consumption": daily_consumption.consumption,
+                        }
                     else:
-                        day_records.append(
-                            {
-                                "chemical_name": chemical_name,
-                                "reciept": 0.0,
-                                "consumption": 0.0,
-                            }
-                        )
+                        d_rec = {
+                            "chemical_name": chemical_name,
+                            "reciept": 0.0,
+                            "consumption": 0.0,
+                        }
+
+                    day_records.append(d_rec)
+
+                    if chemical_name not in total_summary_dict:
+                        total_summary_dict[chemical_name] = {
+                            "total_reciept": 0.0,
+                            "total_consumption": 0.0,
+                        }
+                    else:
+                        total_summary_dict[chemical_name][
+                            "total_reciept"
+                        ] += d_rec["reciept"]
+                        total_summary_dict[chemical_name][
+                            "total_consumption"
+                        ] += d_rec["consumption"]
 
             records_with_dates.append(
                 {"date": current_date_str, "records": day_records}
             )
 
+        total_summary = []
+        for key, val in total_summary_dict.items():
+            val["total_reciept"] = round(val["total_reciept"], 2)
+            val["total_consumption"] = round(val["total_consumption"], 2)
+            total_summary.append(val)
+
         context["records_with_dates"] = records_with_dates
+        context["total_summary"] = total_summary
         context["closing_balance_record"] = closing_balance_record
         context["show_table"] = True
 
