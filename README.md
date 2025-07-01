@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This project is a web based Chemical Management Dashboard developed as part of my internship. The application is designed to streamline the handling of chemical data, providing an interface for users to manage inventories, track usage, and ensure compliance with safety regulations. The design focuses on a modular architecture to enable scalability and a strong focus on security to protect sensitive data.
+This project is a web-based Chemical Management Dashboard developed during my internship to streamline the handling of chemical data. The application enables users to manage inventories, track usage, and ensure compliance with safety regulations. It also features trend analysis tools to identify chemical usage patterns, helping determine procurement needs. Designed with a modular architecture for scalability and robust security measures, the dashboard ensures efficient and secure chemical management.
 
 ---
 
@@ -28,8 +28,30 @@ This project is a web based Chemical Management Dashboard developed as part of m
 
 ---
 
-![Login Page](images/login_page.png)
+## Run the website
 
-![Inventory Management](images/entry_page.png)
+1. Install dependencies
 
-![Report Page](images/report_page.png)
+   ```bash
+    pip install django scikit-learn tkinter matplotlib numpy
+
+   ```
+
+2. Clone the repo
+
+   ```bash
+   git clone https://github.com/asmit-mit/IOCL_Chemical_Management_Website.git
+
+   ```
+
+3. Run the website
+
+   ```bash
+   cd chemical_management_website
+   python3 manage.py runserver
+
+   ```
+
+---
+
+Images to be added...
