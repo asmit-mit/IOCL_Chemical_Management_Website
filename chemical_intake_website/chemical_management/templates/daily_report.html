@@ -47,6 +47,12 @@
     </form>
   </ul>
   {% if show_table %}
+    <p id="selection-details">
+      Showing data for <span style="color: orangered;">{{ chem }}</span> in
+      <span style="color: blue;">{{ unit }}</span> from
+      <span style="color: green;">{{ start_date }}</span> to
+      <span style="color: green;">{{ end_date }}</span>
+    </p>
     <table class="datasheet">
       <tr>
         <th>Date</th>

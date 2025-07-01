@@ -1,3 +1,3 @@
 window.onload = function () {
-  history.replaceState(null, null, window.location.href);
+  history.pushState(null, null, window.location.href);
 };

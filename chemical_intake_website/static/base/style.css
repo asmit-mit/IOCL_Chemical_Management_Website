@@ -72,6 +72,10 @@ body {
   height: 100%;
 }
 
+#clock {
+  font-size: 15px;
+}
+
 #page_title {
   position: relative;
   float: left;

@@ -20,20 +20,40 @@ view_dropdown.addEventListener("change", function () {
   if (view_dropdown.value === "predictions") {
     analytics_table.setAttribute("hidden", "");
     prediction_table.removeAttribute("hidden");
+
     analytics_images.forEach((image) => {
       image.setAttribute("hidden", "");
     });
+
+    analytics_table_rows.forEach((row) => {
+      row.setattribute("hidden", "");
+    });
+
     prediction_images.forEach((image) => {
       image.removeAttribute("hidden");
+    });
+
+    precdiction_table_rows.forEach((row) => {
+      row.removeAttribute("hidden");
     });
   } else {
     analytics_table.removeAttribute("hidden");
     prediction_table.setAttribute("hidden", "");
+
     analytics_images.forEach((image) => {
       image.removeAttribute("hidden");
     });
+
+    analytics_table_rows.forEach((row) => {
+      row.removeAttribute("hidden");
+    });
+
     prediction_images.forEach((image) => {
       image.setAttribute("hidden", "");
+    });
+
+    precdiction_table_rows.forEach((row) => {
+      row.setAttribute("hidden", "");
     });
   }
 });
@@ -42,7 +62,7 @@ unit_dropdown.addEventListener("change", function () {
   const unit_value = unit_dropdown.value;
 
   if (view_dropdown.value === "analytics") {
-    if (unit === "all") {
+    if (unit_value === "all") {
       analytics_images.forEach((img) => {
         img.removeAttribute("hidden");
       });

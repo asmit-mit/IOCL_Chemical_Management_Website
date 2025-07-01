@@ -98,12 +98,22 @@
   box-shadow: 0 4px 0 black;
 }
 
+#selection-details {
+  position: relative;
+  left: 250px;
+  margin: 30px 0 20px 0;
+  padding: 10px 0 10px 20px;
+  width: calc(75% - 20px);
+  border-top: 2px dashed black;
+  border-bottom: 2px dashed black;
+  font-weight: bold;
+}
+
 .scrollable-table-container {
   position: relative;
   background-color: white;
   left: 250px;
   width: 75%;
-  margin: 30px 0 0 0;
   overflow-x: auto;
   overflow-y: hidden;
   white-space: nowrap;

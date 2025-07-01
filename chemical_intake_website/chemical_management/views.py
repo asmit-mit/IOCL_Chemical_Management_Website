@@ -165,6 +165,27 @@ def handle_data_download(columns, value_list, model, download_file_name):
     return response
 
 
+def get_month_name(month_number):
+    months = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+    ]
+    if 1 <= month_number <= 12:
+        return months[month_number - 1]
+    else:
+        return "Invalid month number"
+
+
 def get_and_cache_dropdown_data():
     if cache.get("dropdown_json") is not None:
         return cache.get("dropdown_json")
@@ -198,6 +219,8 @@ def get_and_cache_dropdown_data():
             avg_consume = sum(consumption_values) / len(consumption_values)
         else:
             avg_consume = 0
+
+        avg_consume = round(avg_consume, 2)
 
         if item.unit_code not in data_dict:
             data_dict[item.unit_code] = {
@@ -376,7 +399,7 @@ def get_analytics(
         unit_code=unit_code,
         chemical_code=chemical_code,
         date__year=year,
-        date__month=month,
+        date__month=month - 1,
     ).order_by("date")
 
     dates = list(monthly_data.values_list("date", flat=True))
@@ -597,11 +620,25 @@ def daily_report(request):
         start_date = request.POST["start_date"]
         end_date = request.POST["end_date"]
 
+        unit_context = ChemicalMaster.objects.filter(unit_code=unit)
+        if chemical != "all":
+            chemical_context = ChemicalMaster.objects.filter(
+                unit_code=unit, chemical_code=chemical
+            )
+            context["chem"] = chemical_context[0].chemical_name
+        else:
+            context["chem"] = "All Chemicals"
+
+        context["unit"] = unit_context[0].unit_name
+        context["start_date"] = start_date
+        context["end_date"] = end_date
+
         if chemical == "all":
             queryset = DailyConsumptions.objects.filter(
                 date__range=[start_date, end_date],
                 unit_code__unit_code=unit,
             )
+
         else:
             queryset = DailyConsumptions.objects.filter(
                 date__range=[start_date, end_date],
@@ -656,6 +693,22 @@ def monthly_report(request):
         chemical = request.POST["chemical"]
         month = int(request.POST["select-month"])
 
+        unit_context = ChemicalMaster.objects.filter(unit_code=unit)
+
+        print(chemical)
+
+        if chemical != "all":
+            chemical_context = ChemicalMaster.objects.filter(
+                unit_code=unit, chemical_code=chemical
+            )
+            context["chem_context"] = chemical_context[0].chemical_name
+        else:
+            context["chem_context"] = "All Chemicals"
+
+        context["unit_context"] = unit_context[0].unit_name
+
+        context["month_context"] = get_month_name(month)
+
         data_dict = json.loads(context["data_json"])
         chemicals_in_record = data_dict[unit]["chemicals"]
 
@@ -663,6 +716,7 @@ def monthly_report(request):
         _, total_days = calendar.monthrange(current_year, month)
 
         if chemical != "all":
+            context["chem"] = "All"
             for chem_dict in chemicals_in_record:
                 for key, value in chem_dict.items():
                     if key == chemical:
@@ -680,8 +734,6 @@ def monthly_report(request):
 
         for record in chemicals_in_record:
             chemical_code, chemical_name = next(iter(record.items()))
-
-            print(chemical_code, chemical_name)
 
             last_record = (
                 DailyConsumptions.objects.filter(

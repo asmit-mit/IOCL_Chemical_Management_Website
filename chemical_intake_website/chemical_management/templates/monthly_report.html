@@ -57,6 +57,11 @@
     </form>
   </ul>
   {% if show_table %}
+    <p id="selection-details">
+      Showing data for <span style="color: orangered;">{{ chem_context }}</span> in
+      <span style="color: blue;">{{ unit_context }}</span> for
+      <span style="color: green;">{{ month_context }}</span> month
+    </p>
     <div class="scrollable-table-container">
       <table class="outer-table">
         <tr class="first-row">

@@ -127,6 +127,10 @@ chemical_dropdown.addEventListener("change", function () {
         entry_form.style.left = "270px";
         table_container.removeAttribute("hidden");
 
+        document.querySelectorAll(".recent-data-table tr:not(#header-row)").forEach((row) => {
+          row.remove();
+        });
+
         const chemical_data = data_json[selected_unit]["chemicals"];
         for (const chemical of chemical_data) {
           const [chemical_code, chemical_name] = Object.entries(chemical)[0];

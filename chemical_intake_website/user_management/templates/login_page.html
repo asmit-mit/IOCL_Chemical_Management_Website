@@ -10,6 +10,17 @@
           rel="stylesheet" />
   </head>
   <body>
+    <script>
+      function preventBack() {
+          window.history.forward();
+      }
+
+      setTimeout(preventBack, 0);
+      window.onunload = function () {
+          preventBack();
+      };
+
+    </script>
     <div class="wrapper">
       <div class="header">
         <ul>

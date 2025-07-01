@@ -4,10 +4,10 @@ const submit_button = document.getElementById("submit");
 const clear_button = document.getElementById("clear");
 const form = document.getElementById("montly-form");
 
+const selection_line = document.getElementById("selection-details");
+
 window.onload = function () {
-  if (form) {
-    form.reset();
-  }
+  form.reset();
 
   history.replaceState(null, null, window.location.href);
 
@@ -41,6 +41,7 @@ unit_dropdown.addEventListener("change", function () {
 clear_button.addEventListener("click", function () {
   const table = document.querySelector(".scrollable-table-container");
   table.setAttribute("hidden", "");
+  selection_line.setAttribute("hidden", "");
   history.replaceState(null, null, window.location.href);
 });
 

@@ -12,7 +12,7 @@
   flex-direction: column;
   gap: 30px;
   padding: 0;
-  margin: 10px 0 0 0;
+  margin: 10px 0 30px 0;
 }
 
 .content li p {
@@ -99,12 +99,23 @@
   box-shadow: 0 4px 0 black;
 }
 
+#selection-details {
+  position: relative;
+  left: 250px;
+  margin: 20px 0 20px 0;
+  padding: 10px 0 10px 20px;
+  width: calc(75% - 20px);
+  border-top: 2px dashed black;
+  border-bottom: 2px dashed black;
+  font-weight: bold;
+}
+
 .datasheet {
   position: relative;
   left: 250px;
   width: 75%;
   max-width: 1200px;
-  margin: 30px 0 0 0;
+  margin: 0 0 0 0;
   background-color: black;
   color: white;
   border-top-right-radius: 10px;
