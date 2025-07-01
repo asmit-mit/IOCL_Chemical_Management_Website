@@ -4,3 +4,5 @@ chemical_intake_website/user_management/__pycache__
 chemical_intake_website/chemical_management/__pycache__
 chemical_intake_website/user_management/migrations
 chemical_intake_website/chemical_management/migrations
+chemical_intake_website/chemical_management/migrations
+chemical_intake_website/db.sqlite3
