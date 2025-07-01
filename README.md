@@ -33,7 +33,7 @@ This project is a web-based Chemical Management Dashboard developed during my in
 1. Install dependencies
 
    ```bash
-    pip install django scikit-learn tkinter matplotlib numpy
+    pip install django scikit-learn tk matplotlib numpy
 
    ```
 
@@ -47,7 +47,7 @@ This project is a web-based Chemical Management Dashboard developed during my in
 3. Run the website
 
    ```bash
-   cd chemical_management_website
+   cd chemical_intake_website
    python3 manage.py runserver
 
    ```

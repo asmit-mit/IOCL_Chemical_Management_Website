@@ -26,7 +26,7 @@ view_dropdown.addEventListener("change", function () {
     });
 
     analytics_table_rows.forEach((row) => {
-      row.setattribute("hidden", "");
+      row.setAttribute("hidden", "");
     });
 
     prediction_images.forEach((image) => {
