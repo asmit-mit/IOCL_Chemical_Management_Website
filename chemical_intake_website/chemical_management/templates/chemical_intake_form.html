@@ -23,6 +23,7 @@
             <option disabled selected value="">Select Unit</option>
           </select>
         </li>
+        <script>const tooltip_data = {{ tooltip|safe }};</script>
         <li>
           <label for="chemical">Select Chemical: *</label>
           <select name="chemical" id="chemical">
@@ -103,6 +104,7 @@
       </ul>
     </form>
   </div>
+  <div id="tooltip" style="display: none; position: absolute;"></div>
   <div class="table-container" hidden>
     <table class='recent-data-table'>
       <tr id="header-row">

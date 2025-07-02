@@ -22,6 +22,7 @@
               <option disabled selected value="">Select Unit</option>
             </select>
           </li>
+          <script>const tooltip_data = {{ tooltip|safe }};</script>
           <li>
             <label for="chemical">Select Chemical: *</label>
             <select name="chemical" id="chemical">
@@ -46,6 +47,7 @@
       </li>
     </form>
   </ul>
+  <div id="tooltip" style="display: none; position: absolute;"></div>
   {% if show_table %}
     <p id="selection-details">
       Showing data for <span style="color: orangered;">{{ chem }}</span> in

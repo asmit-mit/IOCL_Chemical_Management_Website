@@ -4,6 +4,7 @@ const forms = document.querySelectorAll("form");
 
 const entry_form = document.getElementById("entryform");
 const table_container = document.querySelector(".table-container");
+const tooltip = document.getElementById("tooltip");
 
 window.onload = function () {
   forms.forEach((form) => form.reset());
@@ -181,14 +182,38 @@ document.getElementById("clear").addEventListener("click", function () {
   return;
 });
 
-// const all_inputs = document.querySelectorAll("input");
-//
-// all_inputs.forEach((input) => {
-//   input.addEventListener("change", function () {
-//     if (input.value !== "") {
-//       input.style.borderLeftColor = "green";
-//     } else {
-//       input.style.borderLeftColor = "red";
-//     }
-//   });
-// });
+chemical_dropdown.addEventListener("mouseenter", () => {
+  const key = unit_dropdown.value + chemical_dropdown.value;
+
+  if (chemical_dropdown.value !== "" && chemical_dropdown.value !== "all") {
+    const unitList = tooltip_data[key];
+    tooltip.style.display = "block";
+
+    tooltip.innerHTML = "";
+
+    const heading = document.createElement("div");
+    heading.textContent = "This chemical belongs to the following units:";
+    tooltip.appendChild(heading);
+
+    const ul = document.createElement("ul");
+
+    for (const unitName of unitList || []) {
+      const li = document.createElement("li");
+      li.textContent = unitName;
+      ul.appendChild(li);
+    }
+
+    tooltip.appendChild(ul);
+  } else {
+    tooltip.style.display = "none";
+  }
+});
+
+chemical_dropdown.addEventListener("mouseleave", () => {
+  tooltip.style.display = "none";
+});
+
+chemical_dropdown.addEventListener("mousemove", (e) => {
+  tooltip.style.left = e.pageX - 10 + "px";
+  tooltip.style.top = e.pageY - 50 + "px";
+});

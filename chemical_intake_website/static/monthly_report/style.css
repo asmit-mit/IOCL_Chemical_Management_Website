@@ -116,10 +116,16 @@
   width: 75%;
   overflow-x: auto;
   overflow-y: hidden;
+  box-shadow: 5px 5px 30px black;
   white-space: nowrap;
+  margin-bottom: 20px;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
 }
 
 .outer-table {
+  border-top-right-radius: 13px;
+  border-top-left-radius: 13px;
   background-color: black;
   min-width: 100%;
   color: white;
@@ -147,6 +153,11 @@
 
 .date-data {
   color: black;
+}
+
+.first-row {
+  border-top-right-radius: 12px;
+  border-top-left-radius: 12px;
 }
 
 .first-row,
@@ -251,4 +262,21 @@
 .second-last-row .inner-table td {
   background-color: white;
   flex: 1;
+}
+
+#tooltip {
+  background-color: palegoldenrod;
+  color: black;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 2px solid black;
+  font-size: 13px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+#tooltip ul {
+  padding: 0 0 0 15px;
 }

@@ -219,6 +219,7 @@
   background-color: white;
   border: 1px solid black;
   border-radius: 5px;
+  box-shadow: 5px 5px 20px black;
 }
 
 .recent-data-table {
@@ -238,4 +239,21 @@
   background-color: white;
   color: black;
   text-align: center;
+}
+
+#tooltip {
+  background-color: palegoldenrod;
+  color: black;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 2px solid black;
+  font-size: 13px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+#tooltip ul {
+  padding: 0 0 0 15px;
 }

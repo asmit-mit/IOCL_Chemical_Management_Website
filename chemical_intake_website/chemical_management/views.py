@@ -4,7 +4,7 @@ import csv
 import json
 import random
 import tkinter as tk
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from functools import wraps
 from io import BytesIO
 from tkinter import filedialog
@@ -149,6 +149,33 @@ def handle_chemical_data_import():
 
     invalidate_cache()
     return True, "CSV file successfully imported."
+
+
+def get_or_cache_tooltip_data():
+    if (cache.get("tooltip")) is not None:
+        return cache.get("tooltip")
+
+    all_chemicals = ChemicalMaster.objects.all()
+    result = {}
+
+    for chem in all_chemicals:
+        key = f"{chem.unit_code}{chem.chemical_code}"
+
+        if key in result:
+            continue
+
+        unit_names = list(
+            ChemicalMaster.objects.filter(
+                chemical_name=chem.chemical_name
+            ).values_list("unit_name", flat=True)
+        )
+
+        result[key] = unit_names
+
+    result_json = json.dumps(result)
+    cache.set("tooltip", result_json)
+    cache.touch("tooltip", 60 * 60 * 2)
+    return result_json
 
 
 def handle_data_download(columns, value_list, model, download_file_name):
@@ -521,12 +548,14 @@ def get_or_cache_analytics():
 def invalidate_cache():
     cache.delete("analytics_data")
     cache.delete("dropdown_json")
+    cache.delete("tooltip")
 
 
 # Create your views here.
 @custom_login_required
 def entryform(request):
     context = {"data_json": get_and_cache_dropdown_data()}
+    context["tooltip"] = get_or_cache_tooltip_data()
 
     requied_inputs = [
         "date",
@@ -607,6 +636,7 @@ def daily_report(request):
     }
 
     context["data_json"] = get_and_cache_dropdown_data()
+    context["tooltip"] = get_or_cache_tooltip_data()
 
     required_inputs = ["start_date", "end_date", "unit", "chemical"]
 
@@ -680,6 +710,7 @@ def monthly_report(request):
     }
 
     context["data_json"] = get_and_cache_dropdown_data()
+    context["tooltip"] = get_or_cache_tooltip_data()
 
     required_inputs = ["select-month", "unit", "chemical"]
 

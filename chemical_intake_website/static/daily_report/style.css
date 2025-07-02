@@ -114,13 +114,20 @@
   position: relative;
   left: 250px;
   width: 75%;
-  max-width: 1200px;
   margin: 0 0 20px 0;
   background-color: black;
   color: white;
-  border-top-right-radius: 10px;
-  border-top-left-radius: 10px;
+  border-top-left-radius: 13px;
+  border-top-right-radius: 13px;
   box-shadow: 5px 5px 30px black;
+}
+
+.datasheet th:first-of-type {
+  border-top-left-radius: 12px;
+}
+
+.datasheet th:last-of-type {
+  border-top-right-radius: 12px;
 }
 
 .datasheet th {
@@ -132,4 +139,21 @@
   text-align: center;
   color: black;
   background-color: white;
+}
+
+#tooltip {
+  background-color: palegoldenrod;
+  color: black;
+  padding: 10px 10px;
+  border-radius: 10px;
+  border: 2px solid black;
+  font-size: 13px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 1000;
+  white-space: nowrap;
+}
+
+#tooltip ul {
+  padding: 0 0 0 15px;
 }
