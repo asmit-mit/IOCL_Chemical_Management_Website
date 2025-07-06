@@ -73,6 +73,9 @@ h1 {
 #analytics-table td,
 #predictions-table td {
   text-align: center;
+}
+
+#analytics-table td {
   background-color: white;
 }
 
@@ -88,4 +91,19 @@ h1 {
 
 .predictions-img {
   max-width: 100%;
+}
+
+tr.increasing {
+  background-color: #ffe5e5;
+  color: #a40000;
+}
+
+tr.stable {
+  background-color: #fffbe0;
+  color: #7a7400;
+}
+
+tr.decreasing {
+  background-color: #e6ffed;
+  color: #006b2e;
 }

@@ -117,3 +117,49 @@ unit_dropdown.addEventListener("change", function () {
     }
   }
 });
+
+window.addEventListener("DOMContentLoaded", () => {
+  const lowCoverage = 0;
+  const optimalCoverage = 3;
+  const highCoverage = 6;
+
+  function hexToRgb(hex) {
+    const bigint = parseInt(hex.replace("#", ""), 16);
+    return {
+      r: (bigint >> 16) & 255,
+      g: (bigint >> 8) & 255,
+      b: bigint & 255,
+    };
+  }
+
+  function interpolateColor(color1, color2, factor) {
+    const result = {
+      r: Math.round(color1.r + (color2.r - color1.r) * factor),
+      g: Math.round(color1.g + (color2.g - color1.g) * factor),
+      b: Math.round(color1.b + (color2.b - color1.b) * factor),
+    };
+    return `rgb(${result.r}, ${result.g}, ${result.b})`;
+  }
+
+  const red = hexToRgb("#f44336");
+  const green = hexToRgb("#4caf50");
+  const blue = hexToRgb("#2196f3");
+
+  document.querySelectorAll("td.coverage").forEach((cell) => {
+    const value = parseFloat(cell.textContent);
+    if (isNaN(value)) return;
+
+    let bgColor;
+
+    if (value <= optimalCoverage) {
+      const factor = Math.max((value - lowCoverage) / (optimalCoverage - lowCoverage), 0);
+      bgColor = interpolateColor(red, green, factor);
+    } else {
+      const factor = Math.min((value - optimalCoverage) / (highCoverage - optimalCoverage), 1);
+      bgColor = interpolateColor(green, blue, factor);
+    }
+
+    cell.style.backgroundColor = bgColor;
+    cell.style.color = "white";
+  });
+});

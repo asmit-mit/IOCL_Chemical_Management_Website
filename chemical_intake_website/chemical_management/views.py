@@ -32,9 +32,7 @@ def custom_login_required(view_func):
     @wraps(view_func)
     def _wrapped_view(request, *args, **kwargs):
         if not request.user.is_authenticated:
-            messages.success(
-                request, "Your session has expired. Please login again."
-            )
+            messages.success(request, "Your session has expired. Please login again.")
             return redirect("user_login")
         return view_func(request, *args, **kwargs)
 
@@ -42,11 +40,7 @@ def custom_login_required(view_func):
 
 
 def handle_user_submission(request, required_fields):
-    missing_fields = [
-        field
-        for field in required_fields
-        if not request.POST.get(field, "").strip()
-    ]
+    missing_fields = [field for field in required_fields if not request.POST.get(field, "").strip()]
     if missing_fields:
         return (
             False,
@@ -165,9 +159,9 @@ def get_or_cache_tooltip_data():
             continue
 
         unit_names = list(
-            ChemicalMaster.objects.filter(
-                chemical_name=chem.chemical_name
-            ).values_list("unit_name", flat=True)
+            ChemicalMaster.objects.filter(chemical_name=chem.chemical_name).values_list(
+                "unit_name", flat=True
+            )
         )
 
         result[key] = unit_names
@@ -180,9 +174,7 @@ def get_or_cache_tooltip_data():
 
 def handle_data_download(columns, value_list, model, download_file_name):
     response = HttpResponse(content_type="text/csv")
-    response["Content-Disposition"] = (
-        f'attachment; filename="{download_file_name}.csv"'
-    )
+    response["Content-Disposition"] = f'attachment; filename="{download_file_name}.csv"'
 
     writer = csv.writer(response)
     writer.writerow(columns)
@@ -236,13 +228,10 @@ def get_and_cache_dropdown_data():
         sap_material_code = "".join(random.choices("0123456789", k=4))
         avg_consume = 0
 
-        consumption_values = [
-            record.consumption for record in consumption_data
-        ]
+        consumption_values = [record.consumption for record in consumption_data]
 
         consumption_data_list = [
-            [record.date.strftime("%Y-%m-%d"), record.consumption]
-            for record in consumption_data
+            [record.date.strftime("%Y-%m-%d"), record.consumption] for record in consumption_data
         ]
 
         if consumption_values:
@@ -304,9 +293,7 @@ def get_analytics(
     )
 
     latest = (
-        DailyConsumptions.objects.filter(
-            unit_code=unit_code, chemical_code=chemical_code
-        )
+        DailyConsumptions.objects.filter(unit_code=unit_code, chemical_code=chemical_code)
         .order_by("-date")
         .first()
     )
@@ -318,15 +305,14 @@ def get_analytics(
     ).order_by("-date")[:7]
 
     avg_consumption = round(
-        last_7_entries.aggregate(Avg("consumption"))["consumption__avg"],
+        last_7_entries.aggregate(Avg("consumption"))["consumption__avg"] or 0,
         2,
     )
-    total_stock = round(latest.closing_balance + latest.sap, 2)
-    coverage = (
-        round(total_stock / (avg_consumption * 31), 2)
-        if avg_consumption
-        else 0
+    total_stock = round(
+        (latest.closing_balance if latest else 0) + (latest.sap if latest else 0), 2
     )
+
+    coverage = round(total_stock / (avg_consumption * 31), 2) if avg_consumption else 0
 
     today = datetime.now()
     start_date = (today - relativedelta(months=n_months)).replace(day=1)
@@ -354,67 +340,65 @@ def get_analytics(
     months = [entry[0] for entry in consumption_data]
     consumptions = [entry[1] for entry in consumption_data]
 
+    future_consumptions, future_months = [0.0] * 4, []
+    slope = 0.0  # default slope
+
     if len(months) > 1:
         X = np.array(range(len(consumptions))).reshape(-1, 1)
         y = np.array(consumptions)
 
         model = LinearRegression()
         model.fit(X, y)
+        slope = model.coef_[0]
 
-        future_indices = np.array(
-            range(len(consumptions), len(consumptions) + 4)
-        ).reshape(-1, 1)
+        future_indices = np.array(range(len(consumptions), len(consumptions) + 4)).reshape(-1, 1)
         future_consumptions = model.predict(future_indices).tolist()
         future_consumptions = [round(val, 2) for val in future_consumptions]
 
         current_month_start = today.replace(day=1)
-        future_months = [
-            current_month_start + relativedelta(months=i) for i in range(4)
-        ]
+        future_months = [current_month_start + relativedelta(months=i) for i in range(4)]
     else:
-        future_consumptions = [0.0, 0.0, 0.0, 0.0]
-        future_months = []
+        model = None
 
-    all_months = months
-
-    all_consumptions = consumptions
-
-    X_all = np.array(range(len(all_consumptions))).reshape(-1, 1)
-
-    model = LinearRegression()
-    model.fit(X_all, all_consumptions)
-
-    y_pred = model.predict(X_all)
-
-    max_value = max(all_consumptions)
-    y_ticks = np.arange(0, max_value + 200, 100)
-
+    threshold = 5
     fig_pred, ax_pred = plt.subplots(figsize=(12, 6))
+    if model:
+        y_pred = model.predict(np.array(range(len(consumptions))).reshape(-1, 1))
+        max_value = max(consumptions) if consumptions else 100
+        y_ticks = np.arange(0, max_value + 200, 100)
+
+        if slope > threshold:
+            line_color = "red"
+        elif slope < -threshold:
+            line_color = "green"
+        else:
+            line_color = "orange"
+
+        ax_pred.plot(
+            months,
+            y_pred,
+            color=line_color,
+            label=f"Trend Line (slope={slope:.2f})",
+            alpha=0.8,
+        )
+        ax_pred.set_yticks(y_ticks)
 
     ax_pred.scatter(
-        all_months,
-        all_consumptions,
+        months,
+        consumptions,
         color="red",
         edgecolor="black",
-        label="Actual & Predicted Data",
+        label="Actual Consumption",
     )
 
-    ax_pred.plot(
-        all_months,
-        y_pred,
-        color="blue",
-        label="Linear Regression Line",
-        alpha=0.8,
-    )
+    max_value = max(consumptions) if consumptions else 100
+    y_ticks = np.arange(0, max_value + 200, 100)
 
-    ax_pred.set_title(
-        f"Predicted Consumption for {chemical_name} ({unit_name})",
-        fontsize=16,
-    )
+    ax_pred.set_yticks(y_ticks)
+    ax_pred.set_title(f"Predicted Consumption for {chemical_name} ({unit_name})", fontsize=16)
     ax_pred.set_xlabel("Months", fontsize=12)
     ax_pred.set_ylabel("Consumption", fontsize=12)
     ax_pred.legend(fontsize=10)
-    ax_pred.set_yticks(y_ticks)
     plt.xticks(rotation=45)
     plt.tight_layout()
 
@@ -425,30 +409,24 @@ def get_analytics(
 
     pred_chart = base64.b64encode(buffer_pred.getvalue()).decode("utf-8")
 
+    try:
+        target_month = datetime(year, month, 1) - relativedelta(months=1)
+    except ValueError:
+        target_month = today - relativedelta(months=1)
+
     monthly_data = DailyConsumptions.objects.filter(
         unit_code=unit_code,
         chemical_code=chemical_code,
-        date__year=year,
-        date__month=month - 1,
+        date__year=target_month.year,
+        date__month=target_month.month,
     ).order_by("date")
 
     dates = list(monthly_data.values_list("date", flat=True))
-    consumptions_daily = list(
-        monthly_data.values_list("consumption", flat=True)
-    )
+    consumptions_daily = list(monthly_data.values_list("consumption", flat=True))
 
     fig, ax = plt.subplots(figsize=(12, 6))
-
-    ax.plot(
-        dates,
-        consumptions_daily,
-        label=chemical_name,
-        alpha=0.7,
-    )
-
-    ax.set_title(
-        f"{chemical_name}({unit_name}) Consumption Pattern", fontsize=16
-    )
+    ax.plot(dates, consumptions_daily, label=chemical_name, alpha=0.7)
+    ax.set_title(f"{chemical_name} ({unit_name}) Daily Consumption", fontsize=16)
     ax.set_xlabel("Date", fontsize=12)
     ax.set_ylabel("Consumption", fontsize=12)
     ax.legend(fontsize=10)
@@ -462,18 +440,24 @@ def get_analytics(
 
     analytics_chart = base64.b64encode(buffer.getvalue()).decode("utf-8")
 
+    trend_direction = (
+        "increasing" if slope > threshold else "decreasing" if slope < -threshold else "stable"
+    )
+
     return (
         {
             "id": id[0],
             "unit_name": unit_name,
             "chemical_name": chemical_name,
             "avg_consumption": avg_consumption,
-            "latest_closing_balance": latest.closing_balance,
-            "latest_sap": latest.sap,
+            "latest_closing_balance": latest.closing_balance if latest else 0,
+            "latest_sap": latest.sap if latest else 0,
             "total_stock": total_stock,
             "coverage": coverage,
             "measure_unit": chemical_instance.unit,
             "predictions": future_consumptions,
+            "trend_slope": round(slope, 2),
+            "trend_direction": trend_direction,
         },
         {"id": id, "analytics_chart": analytics_chart},
         {"id": id, "pred_chart": pred_chart},
@@ -655,9 +639,7 @@ def daily_report(request):
 
         unit_context = ChemicalMaster.objects.filter(unit_code=unit)
         if chemical != "all":
-            chemical_context = ChemicalMaster.objects.filter(
-                unit_code=unit, chemical_code=chemical
-            )
+            chemical_context = ChemicalMaster.objects.filter(unit_code=unit, chemical_code=chemical)
             context["chem"] = chemical_context[0].chemical_name
         else:
             context["chem"] = "All Chemicals"
@@ -730,9 +712,7 @@ def monthly_report(request):
         unit_context = ChemicalMaster.objects.filter(unit_code=unit)
 
         if chemical != "all":
-            chemical_context = ChemicalMaster.objects.filter(
-                unit_code=unit, chemical_code=chemical
-            )
+            chemical_context = ChemicalMaster.objects.filter(unit_code=unit, chemical_code=chemical)
             context["chem_context"] = chemical_context[0].chemical_name
         else:
             context["chem_context"] = "All Chemicals"
@@ -821,16 +801,12 @@ def monthly_report(request):
                             "total_consumption": 0.0,
                         }
                     else:
-                        total_summary_dict[chemical_name][
-                            "total_reciept"
-                        ] += d_rec["reciept"]
-                        total_summary_dict[chemical_name][
-                            "total_consumption"
-                        ] += d_rec["consumption"]
+                        total_summary_dict[chemical_name]["total_reciept"] += d_rec["reciept"]
+                        total_summary_dict[chemical_name]["total_consumption"] += d_rec[
+                            "consumption"
+                        ]
 
-            records_with_dates.append(
-                {"date": current_date_str, "records": day_records}
-            )
+            records_with_dates.append({"date": current_date_str, "records": day_records})
 
         total_summary = []
         for key, val in total_summary_dict.items():
@@ -850,9 +826,7 @@ def monthly_report(request):
 def analytics(request):
     context = {}
 
-    units = list(
-        ChemicalMaster.objects.values("unit_code", "unit_name").distinct()
-    )
+    units = list(ChemicalMaster.objects.values("unit_code", "unit_name").distinct())
 
     (
         context["analytics_data"],
@@ -872,9 +846,7 @@ def settings(request):
             color = request.POST.get("color")
             request.session["background_color"] = color
         elif "clear_consumption_data" in request.POST:
-            messages.success(
-                request, "Cleared all data in DailyConsumptions Database."
-            )
+            messages.success(request, "Cleared all data in DailyConsumptions Database.")
             DailyConsumptions.objects.all().delete()
             invalidate_cache()
             return render(request, "settings_page.html")
@@ -907,9 +879,7 @@ def settings(request):
                 "remarks",
             ]
 
-            return handle_data_download(
-                columns, value_list, DailyConsumptions, "Consumption_Data"
-            )
+            return handle_data_download(columns, value_list, DailyConsumptions, "Consumption_Data")
 
         elif "import_consumption_csv" in request.POST:
             success, message = handle_consumption_data_import()

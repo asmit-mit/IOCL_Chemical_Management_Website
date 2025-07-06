@@ -40,7 +40,7 @@
             <td>{{ item.latest_closing_balance }} {{ item.measure_unit }}</td>
             <td>{{ item.latest_sap }} {{ item.measure_unit }}</td>
             <td>{{ item.total_stock }} {{ item.measure_unit }}</td>
-            <td>{{ item.coverage }}</td>
+            <td class="coverage">{{ item.coverage }}</td>
           </tr>
         {% endfor %}
       </table>
@@ -53,7 +53,8 @@
           <th>Month 3</th>
         </tr>
         {% for item in analytics_data %}
-          <tr id="{{ item.id }}" class="predictions-table-row">
+          <tr id="{{ item.id }}"
+              class="predictions-table-row {{ item.trend_direction }}">
             <td>{{ item.chemical_name }} ({{ item.unit_name }})</td>
             {% for pred in item.predictions %}<td>{{ pred }} {{ item.measure_unit }}</td>{% endfor %}
           </tr>

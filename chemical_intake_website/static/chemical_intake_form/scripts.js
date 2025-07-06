@@ -124,7 +124,7 @@ chemical_dropdown.addEventListener("change", function () {
       sap_stock.value = chemical.sap_stock || 0;
 
       if (avg_consume.value !== "0") {
-        entry_form.style.width = "40%";
+        entry_form.style.width = "calc(100% - 700px)";
         entry_form.style.left = "270px";
         table_container.removeAttribute("hidden");
 
